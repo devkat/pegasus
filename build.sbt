@@ -1,5 +1,3 @@
-enablePlugins(ScalaJSPlugin)
-
 name := "Pegasus Authoring System"
 
 lazy val commonSettings = Seq(
@@ -14,7 +12,7 @@ lazy val client = (project in file("client")).
   settings(commonSettings).
   settings(
     workbenchSettings,
-    bootSnippet := "PegasusApp().main();",
+    bootSnippet := "Pegasus().main();",
     testFrameworks += new TestFramework("utest.runner.Framework"),
     emitSourceMaps := true,
     /* create javascript launcher. Searches for an object extends JSApp */
@@ -34,4 +32,4 @@ lazy val client = (project in file("client")).
       "org.webjars.bower" % "react" % "15.1.0" / "react-with-addons.js" commonJSName "React" minified "react-with-addons.min.js",
       "org.webjars.bower" % "react" % "15.1.0" / "react-dom.js" commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js"
     )
-  ).enablePlugins(ScalaJSPlugin)
+  ).enablePlugins(ScalaJSPlugin, SbtWeb)
