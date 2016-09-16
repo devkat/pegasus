@@ -37,29 +37,29 @@ object Pegasus extends JSApp {
     *
     * @param model
     * @return
-    */
   def pickle(model: RootModel) = {
     val data = Pickle.intoBytes(model)
     data.typedArray().subarray(data.position, data.limit)
   }
+    */
 
   /**
     * Function to unpickle application model from a TypedArray
     *
     * @param data
     * @return
-    */
   def unpickle(data: Int8Array) = {
     Unpickle[RootModel].fromBytes(TypedArrayBuffer.wrap(data))
   }
+    */
 
   @JSExport
   override def main(): Unit = {
     // add a development tool to persist application state
-    AppCircuit.addProcessor(new PersistStateIDB(pickle, unpickle))
+    //AppCircuit.addProcessor(new PersistStateIDB(pickle, unpickle))
 
     // hook it into Ctrl+Shift+S and Ctrl+Shift+L
-    Hooks.hookPersistState("test", AppCircuit)
+    //Hooks.hookPersistState("test", AppCircuit)
 
     ReactDOM.render(router, dom.document.getElementById("editor"))
   }

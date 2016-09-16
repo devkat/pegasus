@@ -11,7 +11,7 @@ import net.devkat.pegasus.model.{Character, Paragraph, Position, Selection}
 
 object ParagraphView {
 
-  case class Props(sectionId: UUID, paragraphProxy: ModelProxy[Paragraph], selectionProxy: ModelProxy[Option[Selection]])
+  case class Props(sectionIndex: Int, paragraphIndex: Int, paragraphProxy: ModelProxy[Paragraph], selectionProxy: ModelProxy[Option[Selection]])
 
   private val component = ReactComponentB[Props]("ParagraphView")
     .renderP { (_, props) =>
@@ -20,13 +20,14 @@ object ParagraphView {
       val selectionOption = props.selectionProxy()
 
       <.div(
-        paragraph.elements map { element =>
-          val proxy = paragraphProxy.zoom(_.elements.find(_.id == element.id).get)
+        paragraph.children.zipWithIndex map { case (element, index) =>
+          val proxy = paragraphProxy.zoom(_.children(index))
           element match {
-            case Character(id, c) => CharacterView(
-              props.sectionId,
-              paragraph.id,
-              paragraphProxy.zoom(_.elements.find(_.id == id).get),
+            case Character(c) => CharacterView(
+              props.sectionIndex,
+              props.paragraphIndex,
+              index,
+              paragraphProxy.zoom(_.children(index).asInstanceOf[Character]),
               props.selectionProxy)
           }
         }
@@ -34,6 +35,6 @@ object ParagraphView {
     }.
     build
 
-  def apply(sectionId: UUID, paragraphProxy: ModelProxy[Paragraph], selectionProxy: ModelProxy[Option[Selection]]) =
-    component(Props(sectionId, paragraphProxy, selectionProxy))
+  def apply(sectionIndex: Int, paragraphIndex: Int, paragraphProxy: ModelProxy[Paragraph], selectionProxy: ModelProxy[Option[Selection]]) =
+    component(Props(sectionIndex, paragraphIndex, paragraphProxy, selectionProxy))
 }

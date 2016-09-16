@@ -7,19 +7,23 @@ import net.devkat.pegasus.model.{Flow, Section, Selection}
 
 object SectionView {
 
-  case class Props(sectionProxy: ModelProxy[Section], selectionProxy: ModelProxy[Option[Selection]])
+  case class Props(sectionIndex: Int, sectionProxy: ModelProxy[Section], selectionProxy: ModelProxy[Option[Selection]])
 
   private val component = ReactComponentB[Props]("SectionView")
     .renderP { (_, props) =>
       val section = props.sectionProxy()
       <.div(
-        section.paragraphs map { paragraph =>
-          ParagraphView(section.id, props.sectionProxy.zoom(_.paragraphs.find(_.id == paragraph.id).get), props.selectionProxy)
+        section.children.zipWithIndex map { case (paragraph, index) =>
+          ParagraphView(
+            props.sectionIndex,
+            index,
+            props.sectionProxy.zoom(_.children(index)),
+            props.selectionProxy)
         }
       )
     }.
     build
 
-  def apply(sectionProxy: ModelProxy[Section], selectionProxy: ModelProxy[Option[Selection]]) =
-    component(Props(sectionProxy, selectionProxy))
+  def apply(sectionIndex: Int, sectionProxy: ModelProxy[Section], selectionProxy: ModelProxy[Option[Selection]]) =
+    component(Props(sectionIndex, sectionProxy, selectionProxy))
 }

@@ -10,8 +10,9 @@ import net.devkat.pegasus.model.{Element, Position, Selection}
 import org.scalajs.dom.raw.HTMLElement
 
 case class ElementProps[T <: Element](
-  sectionId: UUID,
-  paragraphId: UUID,
+  sectionIndex: Int,
+  paragraphIndex: Int,
+  elementIndex: Int,
   elementProxy: ModelProxy[T],
   selectionProxy: ModelProxy[Option[Selection]]
 )
@@ -22,13 +23,13 @@ abstract class ElementView[T <: Element] {
 
   def selectionAttr(props: Props) = props.selectionProxy().
     map(_.focus).
-    filter(_ == Position(props.sectionId, props.paragraphId, props.elementProxy().id)).
+    filter(_ == Position(props.sectionIndex, props.paragraphIndex, props.elementIndex)).
     map(_ => ^.borderRight := "solid 1px black")
 
   def onClick(props: Props)(e: ReactMouseEvent) = {
     e.stopPropagation()
     e.target.asInstanceOf[HTMLElement].focus()
-    val pos = Position(props.sectionId, props.paragraphId, props.elementProxy().id)
+    val pos = Position(props.sectionIndex, props.paragraphIndex, props.elementIndex)
     println(s"Updating selection to $pos")
     props.elementProxy.dispatch(SetSelection(Selection(pos, pos)))
   }

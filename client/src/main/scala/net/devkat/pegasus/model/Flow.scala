@@ -1,13 +1,16 @@
 package net.devkat.pegasus.model
 
-import java.util.UUID
+trait HasChildren {
+  type ChildType <: AnyRef
+  val children: Vector[ChildType]
+}
 
-case class Flow(sections: Seq[Section])
+case class Flow(children: Vector[Section]) extends HasChildren { type ChildType = Section }
 
-case class Section(id: UUID = UUID.randomUUID(), paragraphs: Seq[Paragraph])
+case class Section(children: Vector[Paragraph]) extends HasChildren { type ChildType = Paragraph }
 
-case class Paragraph(id: UUID = UUID.randomUUID(), elements: Seq[Character])
+case class Paragraph(children: Vector[Element]) extends HasChildren { type ChildType = Element }
 
-sealed trait Element { val id: UUID }
+sealed trait Element
 
-case class Character(id: UUID = UUID.randomUUID(), ch: Char) extends Element
+case class Character(ch: Char) extends Element

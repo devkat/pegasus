@@ -16,22 +16,28 @@ object FlowView {
       val flow = flowProxy()
       val selectionOption = props.selectionProxy()
 
-      def onKeyUp(e: ReactKeyboardEvent) = {
-        println("key up")
-        val ch = e.charCode.toChar
-        println(s"Inserting $ch")
-        selectionOption.map(sel => flowProxy.dispatch(InsertCharacter(sel, ch))).getOrElse(Callback.empty)
+      def onKeyPress(e: ReactKeyboardEvent) = {
+        e.preventDefault()
+        selectionOption.map(sel =>
+          flowProxy.dispatch(InsertCharacter(sel, e.charCode.toChar))
+        ).getOrElse(Callback.empty)
       }
 
       def onClick(e: ReactMouseEvent) =
         flowProxy.dispatch(ClearSelection)
 
       <.div(
+        ^.`class` := "pegasus",
         ^.tabIndex := 0,
-        ^.onKeyUp ==> onKeyUp,
+        ^.onKeyPress ==> onKeyPress,
+        //^.onKeyDown ==> { (e: ReactKeyboardEvent) => Callback(e.preventDefault()) },
+        ^.onKeyUp ==> { (e: ReactKeyboardEvent) => Callback(e.preventDefault()) },
         ^.onClick ==> onClick,
-        flow.sections map { section =>
-          SectionView(props.flowProxy.zoom(_.sections.find(_.id == section.id).get), props.selectionProxy)
+        flow.children.zipWithIndex map { case (section, index) =>
+          SectionView(
+            index,
+            props.flowProxy.zoom(_.children(index)),
+            props.selectionProxy)
         }
       )
     }.
