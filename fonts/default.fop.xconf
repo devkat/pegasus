@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<pdf-renderer>
+
+  <cache-file>/var/local/pegasus/cache/fop.cache</cache-file>
+
+  <fonts>
+    
+    <font kerning="yes" embed-url="fonts/alegreyasans/AlegreyaSans-Regular.ttf" embedding-mode="subset">
+      <font-triplet name="Alegreya Sans" style="normal" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/alegreyasans/AlegreyaSans-Bold.ttf" embedding-mode="subset">
+      <font-triplet name="Alegreya Sans" style="normal" weight="700"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/alegreyasans/AlegreyaSans-Italic.ttf" embedding-mode="subset">
+      <font-triplet name="Alegreya Sans" style="italic" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/alegreyasans/AlegreyaSans-BoldItalic.ttf" embedding-mode="subset">
+      <font-triplet name="Alegreya Sans" style="italic" weight="700"/>
+    </font>
+
+    <font kerning="yes" embed-url="fonts/arvo/Arvo-Regular.ttf" embedding-mode="subset">
+      <font-triplet name="Arvo" style="normal" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/arvo/Arvo-Bold.ttf" embedding-mode="subset">
+      <font-triplet name="Arvo" style="normal" weight="700"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/arvo/Arvo-Italic.ttf" embedding-mode="subset">
+      <font-triplet name="Arvo" style="italic" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/arvo/Arvo-BoldItalic.ttf" embedding-mode="subset">
+      <font-triplet name="Arvo" style="italic" weight="700"/>
+    </font>
+
+    <font kerning="yes" embed-url="fonts/exo2/Exo2-Regular.ttf" embedding-mode="subset">
+      <font-triplet name="Exo 2" style="normal" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/exo2/Exo2-Bold.ttf" embedding-mode="subset">
+      <font-triplet name="Exo 2" style="normal" weight="700"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/exo2/Exo2-Italic.ttf" embedding-mode="subset">
+      <font-triplet name="Exo 2" style="italic" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/exo2/Exo2-BoldItalic.ttf" embedding-mode="subset">
+      <font-triplet name="Exo 2" style="italic" weight="700"/>
+    </font>
+
+    <font kerning="yes" embed-url="fonts/lobstertwo/LobsterTwo-Regular.ttf" embedding-mode="subset">
+      <font-triplet name="Lobster Two" style="normal" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/lobstertwo/LobsterTwo-Bold.ttf" embedding-mode="subset">
+      <font-triplet name="Lobster Two" style="normal" weight="700"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/lobstertwo/LobsterTwo-Italic.ttf" embedding-mode="subset">
+      <font-triplet name="Lobster Two" style="italic" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/lobstertwo/LobsterTwo-BoldItalic.ttf" embedding-mode="subset">
+      <font-triplet name="Lobster Two" style="italic" weight="700"/>
+    </font>
+
+    <font kerning="yes" embed-url="fonts/ptsans/PT_Sans-Web-Regular.ttf" embedding-mode="subset">
+      <font-triplet name="PT Sans" style="normal" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/ptsans/PT_Sans-Web-Bold.ttf" embedding-mode="subset">
+      <font-triplet name="PT Sans" style="normal" weight="700"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/ptsans/PT_Sans-Web-Italic.ttf" embedding-mode="subset">
+      <font-triplet name="PT Sans" style="italic" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/ptsans/PT_Sans-Web-BoldItalic.ttf" embedding-mode="subset">
+      <font-triplet name="PT Sans" style="italic" weight="700"/>
+    </font>
+
+    <font kerning="yes" embed-url="fonts/share/Share-Regular.ttf" embedding-mode="subset">
+      <font-triplet name="Share" style="normal" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/share/Share-Bold.ttf" embedding-mode="subset">
+      <font-triplet name="Share" style="normal" weight="700"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/share/Share-Italic.ttf" embedding-mode="subset">
+      <font-triplet name="Share" style="italic" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/share/Share-BoldItalic.ttf" embedding-mode="subset">
+      <font-triplet name="Share" style="italic" weight="700"/>
+    </font>
+
+    <font kerning="yes" embed-url="fonts/sourcesanspro/SourceSansPro-Regular.ttf" embedding-mode="subset">
+      <font-triplet name="Source Sans Pro" style="normal" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/sourcesanspro/SourceSansPro-Bold.ttf" embedding-mode="subset">
+      <font-triplet name="Source Sans Pro" style="normal" weight="700"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/sourcesanspro/SourceSansPro-Italic.ttf" embedding-mode="subset">
+      <font-triplet name="Source Sans Pro" style="italic" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/sourcesanspro/SourceSansPro-BoldItalic.ttf" embedding-mode="subset">
+      <font-triplet name="Source Sans Pro" style="italic" weight="700"/>
+    </font>
+
+    <font kerning="yes" embed-url="fonts/heydings/heydings_icons.ttf" embedding-mode="subset">
+      <font-triplet name="Heydings Common Icons" style="normal" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/heydings/heydings_icons.ttf" embedding-mode="subset">
+      <font-triplet name="Heydings Common Icons" style="normal" weight="700"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/heydings/heydings_icons.ttf" embedding-mode="subset">
+      <font-triplet name="Heydings Common Icons" style="italic" weight="400"/>
+    </font>
+    <font kerning="yes" embed-url="fonts/heydings/heydings_icons.ttf" embedding-mode="subset">
+      <font-triplet name="Heydings Common Icons" style="italic" weight="700"/>
+    </font>
+
+  </fonts>
+</pdf-renderer>

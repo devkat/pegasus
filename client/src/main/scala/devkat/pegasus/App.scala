@@ -1,25 +1,38 @@
 package devkat.pegasus
 
-import com.raquo.laminar.api.L._
-import org.scalajs.dom.document
+import devkat.pegasus.Actions.ReplaceFlow
+import devkat.pegasus.examples.Lipsum
+import devkat.pegasus.model.EditorModel
+import devkat.pegasus.view.RootModelView
+import diode.ModelRO
+import scalatags.JsDom.all._
+import org.scalajs.dom
 
 object App {
 
   def main(args: Array[String]): Unit = {
 
-    // Wait until the DOM is loaded, otherwise app-container element might not exist
-    documentEvents.onDomContentLoaded.foreach { _ =>
+    val rootModel = AppCircuit.zoom(identity)
 
-      val container = document.getElementById("app-container") // This div, its id and contents are defined in index-fastopt.html/index-fullopt.html files
-      container.textContent = ""
+    // subscribe to changes in the application model and call render when anything changes
+    AppCircuit.subscribe(rootModel)(_ => render(rootModel))
 
-      render(container, Pegasus.render())
+    // start the application by dispatching a ReplaceTree action
+    AppCircuit.dispatch(ReplaceFlow(AppCircuit.initialModel.flow))
 
-      //      render(container, TodoApp())
-      //      render(container, SvgContainer())
-      //      render(container, DuckMaster.app())
-    }(unsafeWindowOwner)
+  }
 
+  def render(rootModel: ModelRO[EditorModel]) = {
+
+    val e = div(
+      cls := "app-container",
+      h1("Editor"),
+      RootModelView.render(rootModel, AppCircuit)
+    ).render
+
+    // clear and update contents
+    dom.document.body.innerHTML = ""
+    dom.document.body.appendChild(e)
   }
 
 }

@@ -1,15 +1,11 @@
 package devkat.pegasus.view
 
-import com.raquo.laminar.api.L._
-import com.raquo.laminar.nodes.ReactiveSvgElement
-import devkat.pegasus.model.Flow
-import org.scalajs.dom.svg.G
+import devkat.pegasus.model.EditorModel.Flow
+import diode.ModelRO
 
 object FlowView {
 
-  def render(flowSignal: Signal[Flow]): ReactiveSvgElement[G] =
-    svg.g(
-      children <-- flowSignal.map(_.sections.toSeq).map(_.map(SectionView.render))
-    )
+  def render(flow: ModelRO[Flow]) =
+    flow.value.map(ElementView.render)
 
 }
