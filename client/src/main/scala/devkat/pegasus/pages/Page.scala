@@ -1,4 +1,4 @@
-package net.devkat.pegasus.pages
+package devkat.pegasus.pages
 
 trait Page
 

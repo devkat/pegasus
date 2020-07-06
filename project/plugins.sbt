@@ -1,5 +1,2 @@
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.9")
-
-addSbtPlugin("com.lihaoyi" % "workbench" % "0.2.3")
-
-addSbtPlugin("com.typesafe.sbt" % "sbt-less" % "1.1.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.1.1")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.0.0")

@@ -1,35 +1,29 @@
 name := "Pegasus Authoring System"
 
-lazy val commonSettings = Seq(
-  organization := "net.devkat",
-  version := "0.1.0",
-  scalaVersion := "2.11.8"
-)
+ThisBuild / scalaVersion := "2.13.1"
+ThisBuild / organization := "devkat"
+ThisBuild / version := "0.1.0"
 
-val diodeVersion = "1.0.0"
+lazy val sharedCross = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("shared"))
 
-lazy val client = (project in file("client")).
-  settings(commonSettings).
+lazy val shared = project.in(file("shared")).
+  aggregate(sharedCross.js, sharedCross.jvm).
   settings(
-    workbenchSettings,
-    bootSnippet := "Pegasus().main();",
-    testFrameworks += new TestFramework("utest.runner.Framework"),
-    emitSourceMaps := true,
-    /* create javascript launcher. Searches for an object extends JSApp */
-    persistLauncher := true,
+    publish := {},
+    publishLocal := {},
+  )
 
+lazy val client = (project in file("client"))
+  .settings(
+    scalaJSUseMainModuleInitializer := true,
+    //testFrameworks += new TestFramework("utest.runner.Framework"),
+    //emitSourceMaps := true,
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.1",
-      "com.github.japgolly.scalajs-react" %%% "core" % "0.11.1",
-      "com.github.japgolly.scalajs-react" %%% "extra" % "0.11.1",
-      "me.chrons" %%% "diode" % diodeVersion,
-      "me.chrons" %%% "diode-devtools" % diodeVersion,
-      "me.chrons" %%% "diode-react" % diodeVersion,
-      "me.chrons" %%% "boopickle" % "1.2.1"
-    ),
-
-    jsDependencies ++= Seq(
-      "org.webjars.bower" % "react" % "15.1.0" / "react-with-addons.js" commonJSName "React" minified "react-with-addons.min.js",
-      "org.webjars.bower" % "react" % "15.1.0" / "react-dom.js" commonJSName "ReactDOM" minified "react-dom.min.js" dependsOn "react-with-addons.js"
+      "com.raquo" %%% "laminar" % "0.9.0"
     )
-  ).enablePlugins(ScalaJSPlugin, SbtWeb)
+  )
+  .dependsOn(sharedCross.js)
+  .enablePlugins(ScalaJSPlugin)
+

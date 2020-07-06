@@ -1,4 +1,4 @@
-package net.devkat.pegasus.model
+package devkat.pegasus.model
 
 case class Selection(anchor: Position, focus: Position)
 
