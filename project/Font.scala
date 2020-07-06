@@ -29,4 +29,4 @@ final case class Font(family: FontFamily,
   }
 }
 
-final case class Block(start: Int, end: Int, chars: List[Int])
+final case class Block(start: Int, end: Int, default: Int, chars: Map[String, Int])

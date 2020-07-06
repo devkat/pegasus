@@ -1,13 +1,16 @@
-import scala.xml.XML
 
+import scala.xml.XML
 import java.io.File
+
 import org.apache.fop.configuration.DefaultConfigurationBuilder
-import org.apache.fop.fonts.{Font => FopFont, Typeface}
+import org.apache.fop.fonts.{Typeface, Font => FopFont}
 import org.apache.fop.svg.PDFDocumentGraphics2DConfigurator
+
 import collection.JavaConverters._
 import org.apache.fop.fonts.FontTriplet
 import org.apache.fop.fonts.FontMetrics
 import org.apache.fop.fonts.LazyFont
+
 import scala.xml.XML
 import sbt.util.Logger
 
@@ -53,19 +56,26 @@ object FontManager {
         family = FontFamily(typeface.getFullName + ": " + typeface.getFamilyNames.asScala.mkString(", ")),
         style = FontStyle(triplet.getStyle),
         weight = FontWeight(triplet.getWeight),
-        blocks = unicodeBlocks.toList.map(range =>
-          Block(
-            range.head,
-            range.end,
-            range.toList.map(ch => metrics.getWidth(fopFont.mapChar(ch.toChar), referenceSize))
-          )
-        ),
+        blocks = unicodeBlocks.toList.map(unicodeBlock(fopFont, _)),
         kerning = metrics.getKerningInfo.asScala.flatMap { case (a, m) =>
           //(a.toString, m.toMap.map { case (b, w) => (b.toString -> w.toInt) })
           m.asScala.map { case (b, w) => (a.toChar + "," + b.toChar) -> (w.toInt * fopFont.getFontSize) }
         }.toMap
       )
     }
+  }
+
+  private def unicodeBlock(font: FopFont, range: Range.Inclusive): Block = {
+    val metrics = font.getFontMetrics
+    val char2width: Map[String, Int] =
+      range.toList.map(ch => ch.toChar.toString -> metrics.getWidth(font.mapChar(ch.toChar), referenceSize)).toMap
+    val default = char2width.values.toList.groupBy(identity).toList.maxBy(_._2.size)._1
+    Block(
+      start = range.head,
+      end = range.end,
+      default = default,
+      chars = char2width.filterNot { case (ch, w) => w == default }
+    )
   }
 
 }
