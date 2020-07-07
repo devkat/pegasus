@@ -1,6 +1,6 @@
 package devkat.pegasus
 
-import devkat.pegasus.Actions.ReplaceFlow
+import devkat.pegasus.Actions.{LoadFonts, ReplaceFlow}
 import devkat.pegasus.examples.Lipsum
 import devkat.pegasus.model.EditorModel
 import devkat.pegasus.view.RootModelView
@@ -14,11 +14,10 @@ object App {
 
     val rootModel = AppCircuit.zoom(identity)
 
-    // subscribe to changes in the application model and call render when anything changes
     AppCircuit.subscribe(rootModel)(_ => render(rootModel))
 
-    // start the application by dispatching a ReplaceTree action
-    AppCircuit.dispatch(ReplaceFlow(AppCircuit.initialModel.flow))
+    //AppCircuit.dispatch(ReplaceFlow(AppCircuit.initialModel.flow))
+    AppCircuit.dispatch(LoadFonts())
 
   }
 

@@ -4,8 +4,12 @@ import devkat.pegasus.model.EditorModel.Element.ParagraphBreak
 import devkat.pegasus.model.EditorModel.Selection
 import devkat.pegasus.model.Element.Character
 import devkat.pegasus.model.{Element => FlowElement, Flow => TextFlow}
+import diode.data.Pot
 
-final case class EditorModel(flow: EditorModel.Flow, selection: Option[Selection])
+final case class EditorModel(flow: EditorModel.Flow,
+                             selection: Option[Selection],
+                             fonts: Pot[List[FontFamily]],
+                             status: Option[String])
 
 object EditorModel {
 
@@ -33,12 +37,14 @@ object EditorModel {
 
   def fromFlow(flow: TextFlow): EditorModel =
     EditorModel(
-      flow.sections.flatMap(
+      flow = flow.sections.flatMap(
         _.paragraphs.flatMap(
           _.elements.map(Element.fromFlowElement) :+ ParagraphBreak
         )
       ),
-      None
+      selection = None,
+      fonts = Pot.empty,
+      status = None
     )
 
 }
