@@ -13,6 +13,7 @@ object FontFamily {
   implicit lazy val encoder: Encoder[FontFamily] = deriveEncoder
 }
 
+/*
 sealed trait FontStyle extends EnumEntry
 
 object FontStyle extends Enum[FontStyle] with CirceEnum[FontStyle] {
@@ -31,12 +32,13 @@ object FontStyle extends Enum[FontStyle] with CirceEnum[FontStyle] {
 
   override def values: IndexedSeq[FontStyle] = findValues
 }
+ */
 
 final case class FontWeight(weight: Int)
 
 object FontWeight {
-  implicit lazy val decoder: Decoder[FontWeight] = deriveDecoder
-  implicit lazy val encoder: Encoder[FontWeight] = deriveEncoder
+  implicit lazy val decoder: Decoder[FontWeight] = Decoder[Int].map(FontWeight.apply)
+  implicit lazy val encoder: Encoder[FontWeight] = Encoder[Int].contramap(_.weight)
 }
 
 final case class Font(weight: FontWeight, blocks: List[Block], kerning: Map[String, Int])

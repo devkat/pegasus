@@ -1,6 +1,8 @@
 package devkat.pegasus.fonts
 
 import cats.MonadError
+import cats.effect.Sync
+import cats.implicits._
 import devkat.pegasus.model._
 import org.apache.fop.fonts.{LazyFont, Font => FopFont}
 import org.apache.fop.configuration.{DefaultConfiguration, DefaultConfigurationBuilder}
@@ -27,12 +29,12 @@ object FontManager {
     new DefaultConfigurationBuilder().build(getClass.getResourceAsStream(fopConfigPath))
 
   private final case class FontInfo(family: String,
-                                    style: FontStyle,
+                                    style: String,
                                     weight: FontWeight,
                                     blocks: List[Block],
                                     kerning: Map[String, Int])
 
-  def getFonts[F[_] : MonadError[?, Throwable]]: List[FontFamily] = {
+  def getFonts[F[_] : Sync]: F[List[FontFamily]] = Sync[F].delay {
     val fontInfo = PDFDocumentGraphics2DConfigurator.createFontInfo(fopConfig, false)
     val typefaces = fontInfo.getFonts
     val fontInfos = fontInfo.getFontTriplets.asScala.toList.map { case (triplet, key) =>
@@ -44,13 +46,8 @@ object FontManager {
       val fopFont = fontInfo.getFontInstance(triplet, referenceSize)
       val metrics = fopFont.getFontMetrics
       FontInfo(
-        family = typeface.getFullName + ": " + typeface.getFamilyNames.asScala.mkString(", "),
-        style = triplet.getStyle match {
-          case "regular" => FontStyle.Regular
-          case "bold" => FontStyle.Bold
-          case "italic" => FontStyle.Italic
-          case other => throw new Exception("Unsupported font style: " + other)
-        },
+        family = typeface.getFamilyNames.asScala.headOption.getOrElse(typeface.getFullName),
+        style = triplet.getStyle,
         weight = FontWeight(triplet.getWeight),
         blocks = unicodeBlocks.toList.map(unicodeBlock(fopFont, _)),
         kerning = metrics.getKerningInfo.asScala.flatMap { case (a, m) =>
@@ -65,10 +62,7 @@ object FontManager {
       .map { case (familyName, fonts) =>
         FontFamily(
           name = familyName,
-          fonts = fonts.groupBy(_.style.entryName).map {
-            case (style, font :: Nil) => (style, Font(font.weight, font.blocks, font.kerning))
-            case (style, fonts) => throw new Exception(s"Found ${fonts.size} fonts for family ${familyName} $style")
-          }
+          fonts = fonts.map(font => font.style -> Font(font.weight, font.blocks, font.kerning)).toMap
         )
       }
       .toList

@@ -4,6 +4,13 @@ ThisBuild / scalaVersion := "2.13.1"
 ThisBuild / organization := "devkat"
 ThisBuild / version := "0.1.0"
 
+lazy val commonSettings = Seq(
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
+  scalacOptions ++= Seq(
+    "-language:higherKinds"
+  )
+)
+
 lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("shared"))
@@ -43,6 +50,7 @@ lazy val client = (project in file("client"))
   .enablePlugins(ScalaJSPlugin)
 
 lazy val server = (project in file("server"))
+  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       "org.apache.xmlgraphics" % "fop" % "2.5" excludeAll(

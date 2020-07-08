@@ -22,7 +22,9 @@ object Main extends IOApp {
   private val fontService =
     HttpRoutes.of[IO] {
       case GET -> Root / "fonts" ~ "json" =>
-        Ok(FontManager.getFonts)
+        FontManager.getFonts[IO]
+          .flatMap(Ok(_))
+          .handleErrorWith(t => InternalServerError(t.getMessage))
     }
 
   val app: Resource[IO, Server] =
