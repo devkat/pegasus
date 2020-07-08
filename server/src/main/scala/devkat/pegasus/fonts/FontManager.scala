@@ -4,6 +4,7 @@ import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
 import devkat.pegasus.model._
+import devkat.pegasus.fonts.{Block, Font, FontFamily, FontWeight}
 import org.apache.fop.fonts.{LazyFont, Font => FopFont}
 import org.apache.fop.configuration.{DefaultConfiguration, DefaultConfigurationBuilder}
 import org.apache.fop.svg.PDFDocumentGraphics2DConfigurator

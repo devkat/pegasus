@@ -2,8 +2,9 @@ package devkat.pegasus
 
 import devkat.pegasus.Actions.{Insert, LoadFonts, ReplaceFlow}
 import devkat.pegasus.examples.Lipsum
-import devkat.pegasus.model.{EditorModel, FontFamily}
+import devkat.pegasus.model.EditorModel
 import devkat.pegasus.model.EditorModel.Element.Glyph
+import devkat.pegasus.fonts.FontFamily
 import diode._
 import diode.data.PotState._
 import org.scalajs.dom
@@ -20,7 +21,7 @@ object AppCircuit extends Circuit[EditorModel] {
 
         case ReplaceFlow(flow) => updated(flow)
 
-        case Insert(c) => updated(Glyph(c) +: value)
+        case Insert(c) => updated(Glyph(c, Set.empty) +: value)
 
       }
   }

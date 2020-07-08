@@ -3,7 +3,7 @@ package devkat.pegasus.server
 import cats.effect._
 import cats.implicits._
 import devkat.pegasus.fonts.FontManager
-import devkat.pegasus.model.FontFamily
+import devkat.pegasus.fonts.FontFamily
 import org.http4s.{EntityEncoder, HttpRoutes}
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.Server

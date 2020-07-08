@@ -1,14 +1,15 @@
 package devkat.pegasus.model
 
-import devkat.pegasus.model.EditorModel.Element.ParagraphBreak
 import devkat.pegasus.model.EditorModel.Selection
 import devkat.pegasus.model.Element.Character
+import devkat.pegasus.model.Style.{CharacterStyle, ParagraphStyle}
+import devkat.pegasus.model.StyleAttr.FontFamily
 import devkat.pegasus.model.{Element => FlowElement, Flow => TextFlow}
 import diode.data.Pot
 
 final case class EditorModel(flow: EditorModel.Flow,
                              selection: Option[Selection],
-                             fonts: Pot[List[FontFamily]],
+                             fonts: Pot[List[devkat.pegasus.fonts.FontFamily]],
                              status: Option[String])
 
 object EditorModel {
@@ -21,12 +22,12 @@ object EditorModel {
 
   object Element {
 
-    final case class Glyph(char: Char) extends Element
+    final case class Glyph(char: Char, style: Set[CharacterStyle]) extends Element
 
-    case object ParagraphBreak extends Element
+    final case class Paragraph(style: Set[ParagraphStyle]) extends Element
 
     def fromFlowElement: FlowElement => Element = {
-      case Character(c) => Glyph(c)
+      case Character(c) => Glyph(c, Set(CharacterStyle(FontFamily("Arvo"))))
     }
 
   }
@@ -39,7 +40,7 @@ object EditorModel {
     EditorModel(
       flow = flow.sections.flatMap(
         _.paragraphs.flatMap(
-          _.elements.map(Element.fromFlowElement) :+ ParagraphBreak
+          _.elements.map(Element.fromFlowElement) :+ Element.Paragraph(Set.empty)
         )
       ),
       selection = None,

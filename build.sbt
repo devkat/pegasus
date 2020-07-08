@@ -14,6 +14,7 @@ lazy val commonSettings = Seq(
 lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("shared"))
+  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "cats-core" % "2.1.1",
@@ -35,6 +36,7 @@ lazy val shared = project.in(file("shared")).
 */
 
 lazy val client = (project in file("client"))
+  .settings(commonSettings)
   .settings(
     scalaJSUseMainModuleInitializer := true,
     //testFrameworks += new TestFramework("utest.runner.Framework"),

@@ -1,10 +1,7 @@
-package devkat.pegasus.model
+package devkat.pegasus.fonts
 
-import cats.Order
-import cats.implicits._
-import enumeratum.{CirceEnum, Enum, EnumEntry}
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 
 final case class FontFamily(name: String, fonts: Map[String, Font])
 

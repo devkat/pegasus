@@ -1,14 +1,14 @@
 package devkat.pegasus.view
 
 import devkat.pegasus.model.EditorModel.Element
-import devkat.pegasus.model.EditorModel.Element.{Glyph, ParagraphBreak}
+import devkat.pegasus.model.EditorModel.Element.{Glyph, Paragraph}
 
 object ElementView {
 
   def render(elem: Element) =
     elem match {
-      case c: Element.Glyph => GlyphView.render(c)
-      case ParagraphBreak => GlyphView.render(Glyph('¶'))
+      case c: Glyph => GlyphView.render(c)
+      case p: Paragraph => GlyphView.render(Glyph('¶', Set.empty))
     }
 
 }
