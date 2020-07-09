@@ -1,7 +1,7 @@
 package devkat.pegasus
 
-import devkat.pegasus.model.EditorModel.Flow
 import devkat.pegasus.fonts.FontFamily
+import devkat.pegasus.model.sequential.Flow
 import diode.Action
 import diode.data.{Pot, PotAction}
 

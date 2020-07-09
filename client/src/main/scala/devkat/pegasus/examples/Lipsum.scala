@@ -1,6 +1,7 @@
 package devkat.pegasus.examples
 
-import devkat.pegasus.model.{Element, Flow, Paragraph, Section}
+import devkat.pegasus.model.{Element, nested}
+import devkat.pegasus.model.nested.{Element, Flow, Paragraph, Span}
 
 object Lipsum {
 
@@ -13,15 +14,11 @@ object Lipsum {
       |""".stripMargin
 
   def flowFromString(s: String): Flow =
-    Flow(
-      Vector(
-        Section(
-          s.split("\n").map(paraFromString).toVector
-        )
-      )
+    nested.Flow(
+      s.split("\n").map(paraFromString).toSeq
     )
 
   def paraFromString(s: String): Paragraph =
-    Paragraph(s.map(Element.Character.apply).toVector)
+    Paragraph(Seq(Span(s.map(Element.Character.apply).toSeq, Set.empty)), Set.empty)
 
 }

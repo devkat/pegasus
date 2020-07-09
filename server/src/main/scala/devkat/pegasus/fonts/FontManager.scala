@@ -1,12 +1,9 @@
 package devkat.pegasus.fonts
 
-import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
-import devkat.pegasus.model._
-import devkat.pegasus.fonts.{Block, Font, FontFamily, FontWeight}
-import org.apache.fop.fonts.{LazyFont, Font => FopFont}
 import org.apache.fop.configuration.{DefaultConfiguration, DefaultConfigurationBuilder}
+import org.apache.fop.fonts.{LazyFont, Font => FopFont}
 import org.apache.fop.svg.PDFDocumentGraphics2DConfigurator
 
 import scala.jdk.CollectionConverters._
@@ -35,7 +32,7 @@ object FontManager {
                                     blocks: List[Block],
                                     kerning: Map[String, Int])
 
-  def getFonts[F[_] : Sync]: F[List[FontFamily]] = Sync[F].delay {
+  def getFonts[F[_] : Sync]: F[Fonts] = Sync[F].delay {
     val fontInfo = PDFDocumentGraphics2DConfigurator.createFontInfo(fopConfig, false)
     val typefaces = fontInfo.getFonts
     val fontInfos = fontInfo.getFontTriplets.asScala.toList.map { case (triplet, key) =>
@@ -59,14 +56,11 @@ object FontManager {
     }
 
     fontInfos
-      .groupBy(_.family)
-      .map { case (familyName, fonts) =>
-        FontFamily(
-          name = familyName,
-          fonts = fonts.map(font => font.style -> Font(font.weight, font.blocks, font.kerning)).toMap
-        )
-      }
-      .toList
+      .groupBy(fontInfo => FontKey(fontInfo.family, fontInfo.style))
+      .view
+      // FIXME
+      .mapValues(_.headOption.map(font => Font(font.weight, font.blocks, font.kerning)).getOrElse(sys.error("failed")))
+      .toMap
   }
 
   private def unicodeBlock(font: FopFont, range: Range.Inclusive): Block = {

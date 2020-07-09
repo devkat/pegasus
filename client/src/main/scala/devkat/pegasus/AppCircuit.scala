@@ -2,10 +2,11 @@ package devkat.pegasus
 
 import devkat.pegasus.Actions.{Insert, LoadFonts, ReplaceFlow}
 import devkat.pegasus.examples.Lipsum
-import devkat.pegasus.model.EditorModel
-import devkat.pegasus.model.EditorModel.Element.Glyph
 import devkat.pegasus.fonts.FontFamily
+import devkat.pegasus.model.EditorModel
+import devkat.pegasus.model.sequential.Flow
 import diode._
+import diode.data.Pot
 import diode.data.PotState._
 import org.scalajs.dom
 
@@ -14,7 +15,14 @@ import scala.concurrent.Future
 
 object AppCircuit extends Circuit[EditorModel] {
 
-  override def initialModel: EditorModel = EditorModel.fromFlow(Lipsum.flowFromString(Lipsum.lipsum))
+  override def initialModel: EditorModel = {
+    EditorModel(
+      flow = Flow.fromNestedFlow(Lipsum.flowFromString(Lipsum.lipsum)),
+      selection = None,
+      fonts = Pot.empty,
+      status = None
+    )
+  }
 
   val flowHandler = new ActionHandler(zoomTo(_.flow)) {
     override def handle = {
