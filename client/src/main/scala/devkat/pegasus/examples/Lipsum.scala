@@ -1,5 +1,7 @@
 package devkat.pegasus.examples
 
+import devkat.pegasus.model.Style.ParagraphStyle
+import devkat.pegasus.model.StyleAttr.{FontFamily, FontStyle}
 import devkat.pegasus.model.nested.{Character, Flow, Paragraph, Span}
 import shapeless.HMap
 
@@ -13,12 +15,18 @@ object Lipsum {
       |Interdum et malesuada fames ac ante ipsum primis in faucibus. In hac habitasse platea dictumst. Nulla id molestie nibh. Maecenas laoreet consequat enim vitae volutpat. Proin efficitur eros ac pharetra posuere. Fusce eros enim, malesuada in orci non, imperdiet scelerisque orci. Fusce feugiat nibh id elit dignissim volutpat. Nam non purus elementum, sollicitudin augue a, ornare diam. In congue efficitur est, a porttitor mauris dignissim a.
       |""".stripMargin
 
+  private val defaultStyle =
+    HMap[ParagraphStyle](
+      FontFamily -> "Arvo",
+      FontStyle -> "normal"
+    )
+
   def flowFromString(s: String): Flow =
     Flow(
       s.split("\n").map(paraFromString).toList
     )
 
   def paraFromString(s: String): Paragraph =
-    Paragraph(List(Span(s.map(Character.apply).toList, HMap.empty)), HMap.empty)
+    Paragraph(List(Span(s.map(Character.apply).toList, HMap.empty)), defaultStyle)
 
 }

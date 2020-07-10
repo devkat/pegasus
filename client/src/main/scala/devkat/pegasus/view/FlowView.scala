@@ -1,9 +1,11 @@
 package devkat.pegasus.view
 
 import cats.Id
+import devkat.pegasus.fonts.Fonts
 import devkat.pegasus.layout.Layout
 import devkat.pegasus.layout.LayoutElement.Glyph
 import devkat.pegasus.model.EditorModel
+import devkat.pegasus.model.sequential.Flow
 import diode.ModelRO
 import org.scalajs.dom.svg.G
 import scalatags.JsDom
@@ -15,10 +17,9 @@ object FlowView {
 
   val w = 500
 
-  def render(model: ModelRO[EditorModel]): JsDom.TypedTag[G] = {
-    val flow = model.value.flow
-    val fonts = model.value.fonts.getOrElse(sys.error("fonts not loaded")) // FIXME
-    val (log, _, lines) = Layout[Id](flow, w).run(fonts, ())
+  def render(flow: ModelRO[Flow], fonts: Fonts): JsDom.TypedTag[G] = {
+    val (log, _, lines) = Layout[Id](flow.value, w).run(fonts, ())
+    log.foreach(println) // FIXME impure
     g(
       lines.map(line =>
         text(

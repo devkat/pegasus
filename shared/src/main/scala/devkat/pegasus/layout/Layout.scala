@@ -50,41 +50,41 @@ object Layout {
       case e :: tail => layoutLines(e, tail, width)
     }
      */
-    val linesF: LayoutRW[F, List[Line]] = layoutLines(paraChars, width)
-    linesF.flatMap(lines =>
-      if (paraChars.size == tail.size) pure(List.empty[Line])
+    val linesF: LayoutRW[F, List[Line]] = layoutLines(paraChars, style, width)
+    val next: LayoutRW[F, List[Line]] =
+      if (paraChars.size == tail.size) pure(List.empty)
       else Layout(tail.drop(paraChars.size), width)
-    )
+    (linesF, next).mapN(_ ::: _)
   }
 
   def layoutLines[
     F[_] : Monad
-  ](flow: Flow, remainingWidth: Double): LayoutRW[F, List[Line]] =
+  ](flow: Flow, paraStyle: HMap[ParagraphStyle], remainingWidth: Double): LayoutRW[F, List[Line]] =
     flow
       .foldLeftM((List.empty[Line], List.empty[LayoutElement], 0)) { case ((prevLines, prevElems, prevX), e) =>
-      for {
-        layoutElementOption <- e match {
-          case c@Character(char, style) =>
-            for {
-              widthOrError <- referenceWidth[F](c)
-              widthOption <- EitherT
-                .fromEither[LayoutRW[F, *]](widthOrError)
-                .map(Some(_))
-                .valueOrF(error => tell[F, Fonts, List[String], Unit](List(error)).as(Option.empty[Int]))
-            } yield widthOption.map(w => (Glyph(prevX, 0, c), prevX + w))
-          case other => tell[F, Fonts, List[String], Unit](List("Unsupported element: " + other.toString))
-            .as(None)
+        for {
+          layoutElementOption <- e match {
+            case c@Character(char, style) =>
+              for {
+                widthOrError <- referenceWidth[F](c, paraStyle)
+                widthOption <- EitherT
+                  .fromEither[LayoutRW[F, *]](widthOrError)
+                  .map(Some(_))
+                  .valueOrF(error => tell[F, Fonts, List[String], Unit](List(error)).as(Option.empty[Int]))
+              } yield widthOption.map(w => (Glyph(prevX, 0, c), prevX + w))
+            case other => tell[F, Fonts, List[String], Unit](List("Unsupported element: " + other.toString))
+              .as(None)
+          }
+        } yield layoutElementOption.fold(
+          (prevLines, prevElems, prevX)
+        ) {
+          case (e, newX) => (prevLines, e :: prevElems, newX)
         }
-      } yield layoutElementOption.fold(
-        (prevLines, prevElems, prevX)
-      ) {
-        case (e, newX) => (prevLines, e :: prevElems, newX)
-      }
 
-    }
-    .map { case (prevLines, prevElems, prevX) =>
-      prevLines
-    }
+      }
+      .map { case (prevLines, prevElems, prevX) =>
+        prevLines
+      }
 
 
   /*
@@ -108,12 +108,12 @@ object Layout {
 
   def referenceWidth[
     F[_] : Monad
-  ](char: Character): LayoutRW[F, Either[String, Int]] =
+  ](char: Character, paraStyle: HMap[ParagraphStyle]): LayoutRW[F, Either[String, Int]] =
     ask[F, Fonts, List[String], Unit].map(fonts =>
       Tuple2
         .apply(
-          char.style.get(FontFamily).toRight("Font family not set"),
-          char.style.get(FontStyle).toRight("Font style not set")
+          char.style.get(FontFamily).orElse(paraStyle.get(FontFamily)).toRight("Font family not set"),
+          char.style.get(FontStyle).orElse(paraStyle.get(FontStyle)).toRight("Font style not set")
         )
         .tupled
         .map((FontKey.apply _).tupled)

@@ -11,7 +11,11 @@ package object sequential {
 
   object Flow {
     def fromNestedFlow: NestedFlow => Flow =
-      _.paragraphs.flatMap(_.spans.flatMap(_.elements.map(Element.fromFlowElement)))
+      _.paragraphs.flatMap(p =>
+        Paragraph(p.style) :: p.spans.flatMap(span =>
+          span.elements.map(Element.fromFlowElement(span.style))
+        )
+      )
   }
 
   sealed trait Element
@@ -22,8 +26,8 @@ package object sequential {
 
   object Element {
 
-    def fromFlowElement: NestedElement => Element = {
-      case NestedCharacter(c) => Character(c, HMap[CharacterStyle](FontFamily -> "Arvo"))
+    def fromFlowElement(style: HMap[CharacterStyle]): NestedElement => Element = {
+      case NestedCharacter(c) => Character(c, style)
     }
 
   }

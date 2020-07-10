@@ -55,7 +55,11 @@ object FontManager {
       )
     }
 
-    Fonts(fontInfos.map(font => Font(font.family, font.style, font.weight, font.blocks, font.kerning)))
+    Fonts(
+      fontInfos
+        .distinctBy(font => (font.family, font.style, font.weight))
+        .map(font => Font(font.family, font.style, font.weight, font.blocks, font.kerning))
+    )
   }
 
   private def unicodeBlock(font: FopFont, range: Range.Inclusive): Block = {
