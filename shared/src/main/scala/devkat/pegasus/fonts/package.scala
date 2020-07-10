@@ -7,11 +7,23 @@ package object fonts {
 
   final case class FontKey(family: String, style: String)
 
-  type Fonts = Map[FontKey, Font]
+  final case class Fonts(fonts: List[Font]) {
+
+    private lazy val fontMap: Map[FontKey, Font] = {
+      fonts
+        .groupBy(f => FontKey(f.family.value, f.style.value))
+        .view
+        .mapValues(_.head)
+        .toMap
+    }
+
+    def get(key: FontKey): Option[Font] = fontMap.get(key)
+
+  }
 
   object Fonts {
-    implicit lazy val decoder: Decoder[FontFamily] = deriveDecoder
-    implicit lazy val encoder: Encoder[FontFamily] = deriveEncoder
+    implicit lazy val decoder: Decoder[Fonts] = Decoder[List[Font]].map(Fonts.apply)
+    implicit lazy val encoder: Encoder[Fonts] = Encoder[List[Font]].contramap(_.fonts)
   }
 
   final case class FontFamily(value: String)
@@ -35,7 +47,11 @@ package object fonts {
     implicit lazy val encoder: Encoder[FontWeight] = Encoder[Int].contramap(_.value)
   }
 
-  final case class Font(weight: FontWeight, blocks: List[Block], kerning: Map[String, Int])
+  final case class Font(family: FontFamily,
+                        style: FontStyle,
+                        weight: FontWeight,
+                        blocks: List[Block],
+                        kerning: Map[String, Int])
 
   object Font {
     implicit lazy val decoder: Decoder[Font] = deriveDecoder

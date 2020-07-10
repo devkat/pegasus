@@ -1,6 +1,6 @@
 package devkat.pegasus.view
 
-import devkat.pegasus.model.SeqElement.Glyph
+import devkat.pegasus.layout.LayoutElement.Glyph
 import org.scalajs.dom.svg.TSpan
 import scalatags.JsDom
 import scalatags.JsDom.all._
@@ -14,7 +14,7 @@ object GlyphView {
   }
 
   def render(glyph: Glyph): JsDom.TypedTag[TSpan] = {
-    val s = specialChar(glyph.char).getOrElse(glyph.char.toString)
+    val s = specialChar(glyph.char.char).getOrElse(glyph.char.toString)
     tspan(s)
   }
 

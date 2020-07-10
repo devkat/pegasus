@@ -31,7 +31,7 @@ object RootModelView {
       ),
       svg(
         `class` := "pegasus",
-        FlowView.render(model.zoom(_.flow))
+        FlowView.render(model.zoom(identity))
       ),
       div(
         `class` := "status-bar",

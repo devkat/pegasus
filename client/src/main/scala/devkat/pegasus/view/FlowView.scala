@@ -1,40 +1,35 @@
 package devkat.pegasus.view
 
-import devkat.pegasus.layout.LayoutElement
+import cats.Id
+import devkat.pegasus.layout.Layout
 import devkat.pegasus.layout.LayoutElement.Glyph
-import devkat.pegasus.model.sequential.Flow
+import devkat.pegasus.model.EditorModel
 import diode.ModelRO
-import org.scalajs.dom.svg.{G, Text}
+import org.scalajs.dom.svg.G
 import scalatags.JsDom
-import scalatags.JsDom.svgTags._
+import scalatags.JsDom.all._
+import scalatags.JsDom.svgAttrs.{SeqFrag => _, _}
+import scalatags.JsDom.svgTags.{SeqFrag => _, _}
 
 object FlowView {
 
   val w = 500
 
-  def render(flow: ModelRO[Flow]): JsDom.TypedTag[G] = {
+  def render(model: ModelRO[EditorModel]): JsDom.TypedTag[G] = {
+    val flow = model.value.flow
+    val fonts = model.value.fonts.getOrElse(sys.error("fonts not loaded")) // FIXME
+    val (log, _, lines) = Layout[Id](flow, w).run(fonts, ())
     g(
-      flow.value match {
-        case head :: tail => renderElement(head, tail)
-        case Nil => Nil
-      }
+      lines.map(line =>
+        text(
+          x := line.x,
+          y := line.y,
+          line.elements.map {
+            case Glyph(x, y, c) => tspan(c.char.toString)
+          }
+        )
+      )
     )
   }
-
-  def renderElement(e: LayoutElement, tail: List[LayoutElement]): List[JsDom.TypedTag[Text]] = {
-    e match {
-      case g: Glyph => renderGlyph(g)
-      case p: ParagraphStart => renderParagraph(p, tail)
-    }
-    tail.headOption match {
-      case Some(head) => renderElement(head, tail.drop(1))
-      case None =>
-    }
-  }
-
-  def renderParagraph(p: ParagraphStart, tail: Seq[SeqElement]) = ???
-
-  def renderGlyph(glyph: Glyph) = ???
-
 
 }

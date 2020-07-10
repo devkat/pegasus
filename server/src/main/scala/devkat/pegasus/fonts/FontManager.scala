@@ -26,8 +26,8 @@ object FontManager {
   private lazy val fopConfig: DefaultConfiguration =
     new DefaultConfigurationBuilder().build(getClass.getResourceAsStream(fopConfigPath))
 
-  private final case class FontInfo(family: String,
-                                    style: String,
+  private final case class FontInfo(family: FontFamily,
+                                    style: FontStyle,
                                     weight: FontWeight,
                                     blocks: List[Block],
                                     kerning: Map[String, Int])
@@ -44,8 +44,8 @@ object FontManager {
       val fopFont = fontInfo.getFontInstance(triplet, referenceSize)
       val metrics = fopFont.getFontMetrics
       FontInfo(
-        family = typeface.getFamilyNames.asScala.headOption.getOrElse(typeface.getFullName),
-        style = triplet.getStyle,
+        family = FontFamily(typeface.getFamilyNames.asScala.headOption.getOrElse(typeface.getFullName)),
+        style = FontStyle(triplet.getStyle),
         weight = FontWeight(triplet.getWeight),
         blocks = unicodeBlocks.toList.map(unicodeBlock(fopFont, _)),
         kerning = metrics.getKerningInfo.asScala.flatMap { case (a, m) =>
@@ -55,12 +55,7 @@ object FontManager {
       )
     }
 
-    fontInfos
-      .groupBy(fontInfo => FontKey(fontInfo.family, fontInfo.style))
-      .view
-      // FIXME
-      .mapValues(_.headOption.map(font => Font(font.weight, font.blocks, font.kerning)).getOrElse(sys.error("failed")))
-      .toMap
+    Fonts(fontInfos.map(font => Font(font.family, font.style, font.weight, font.blocks, font.kerning)))
   }
 
   private def unicodeBlock(font: FopFont, range: Range.Inclusive): Block = {

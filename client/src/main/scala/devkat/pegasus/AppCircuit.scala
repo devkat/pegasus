@@ -2,13 +2,15 @@ package devkat.pegasus
 
 import devkat.pegasus.Actions.{Insert, LoadFonts, ReplaceFlow}
 import devkat.pegasus.examples.Lipsum
-import devkat.pegasus.fonts.FontFamily
+import devkat.pegasus.fonts.{FontFamily, Fonts}
 import devkat.pegasus.model.EditorModel
-import devkat.pegasus.model.sequential.Flow
+import devkat.pegasus.model.Style.CharacterStyle
+import devkat.pegasus.model.sequential.{Character, Flow}
 import diode._
 import diode.data.Pot
 import diode.data.PotState._
 import org.scalajs.dom
+import shapeless.HMap
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -29,7 +31,7 @@ object AppCircuit extends Circuit[EditorModel] {
 
         case ReplaceFlow(flow) => updated(flow)
 
-        case Insert(c) => updated(Glyph(c, Set.empty) +: value)
+        case Insert(c) => updated(Character(c, HMap.empty) +: value)
 
       }
   }
@@ -62,7 +64,7 @@ object AppCircuit extends Circuit[EditorModel] {
     dom.ext.Ajax
       .get(url = "/fonts.json")
       .flatMap(r => Future.fromTry(parse(r.responseText).toTry))
-      .flatMap(r => Future.fromTry(r.as[List[FontFamily]].toTry))
+      .flatMap(r => Future.fromTry(r.as[Fonts].toTry))
   }
 
 }
