@@ -3,7 +3,7 @@ package devkat.pegasus.view
 import cats.Id
 import devkat.pegasus.fonts.Fonts
 import devkat.pegasus.layout.Layout
-import devkat.pegasus.layout.LayoutElement.Glyph
+import devkat.pegasus.layout.LineElement.Glyph
 import devkat.pegasus.model.EditorModel
 import devkat.pegasus.model.sequential.Flow
 import diode.ModelRO
@@ -23,14 +23,21 @@ object FlowView {
     g(
       lines.map(line =>
         text(
-          x := line.x,
-          y := line.y,
-          line.elements.map {
-            case Glyph(x, y, c) => tspan(c.char.toString)
-          }
+          x := line.elements.map(_.box.x.svgString).mkString(" "),
+          y := line.box.y,
+          line.elements.map { case Glyph(_, c) => renderChar(c.char) }.mkString
         )
       )
     )
+  }
+
+  private def renderChar: Char => Char = {
+    case ' ' => '·'
+    case other => other
+  }
+
+  implicit class DoubleSyntax(val d: Double) extends AnyVal {
+    def svgString: String = f"$d%.3f"
   }
 
 }

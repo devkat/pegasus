@@ -1,17 +1,18 @@
 package devkat.pegasus
 
+import cats.implicits._
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 
 package object fonts {
 
-  final case class FontKey(family: String, style: String)
+  final case class FontKey(family: String, weight: Int, style: String)
 
   final case class Fonts(fonts: List[Font]) {
 
     private lazy val fontMap: Map[FontKey, Font] = {
       fonts
-        .groupBy(f => FontKey(f.family.value, f.style.value))
+        .groupBy(f => FontKey(f.family.value, f.weight.value, f.style.value))
         .view
         .mapValues(_.head)
         .toMap

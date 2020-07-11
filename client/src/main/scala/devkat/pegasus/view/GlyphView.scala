@@ -1,6 +1,6 @@
 package devkat.pegasus.view
 
-import devkat.pegasus.layout.LayoutElement.Glyph
+import devkat.pegasus.layout.LineElement.Glyph
 import org.scalajs.dom.svg.TSpan
 import scalatags.JsDom
 import scalatags.JsDom.all._

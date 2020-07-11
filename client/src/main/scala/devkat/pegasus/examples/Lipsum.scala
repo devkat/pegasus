@@ -1,13 +1,18 @@
 package devkat.pegasus.examples
 
 import devkat.pegasus.model.Style.ParagraphStyle
-import devkat.pegasus.model.StyleAttr.{FontFamily, FontStyle}
+import devkat.pegasus.model.StyleAttr.{FontFamily, FontSize, FontStyle, FontWeight}
 import devkat.pegasus.model.nested.{Character, Flow, Paragraph, Span}
 import shapeless.HMap
 
 object Lipsum {
 
   val lipsum: String =
+    """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent varius viverra suscipit. Quisque tristique, dui ac pretium sagittis, metus odio condimentum metus, et accumsan purus tortor non mi. Proin iaculis tristique malesuada. Pellentesque ac justo non leo venenatis pharetra. Proin dictum neque eros, quis sagittis dolor venenatis facilisis. Aliquam pulvinar eros dolor, vel pellentesque nunc tristique et. Integer ac nunc placerat lectus aliquet pellentesque ac eu risus. Quisque suscipit urna lacinia purus vehicula, at rutrum neque vulputate. Curabitur placerat eleifend quam quis laoreet. Pellentesque id placerat justo, consectetur pharetra enim. Integer leo sapien, vulputate ut imperdiet non, suscipit sit amet eros.
+      |Pellentesque quam velit, sodales quis congue in, interdum a tortor. In sed enim faucibus, laoreet elit ut, efficitur metus. Sed at pretium leo. Proin aliquet eget justo vel rutrum. Vivamus dictum neque libero, eget ornare purus tincidunt egestas. Aliquam vehicula hendrerit lectus, vitae tincidunt eros. Aliquam erat volutpat. Mauris massa leo, gravida a dignissim ut, maximus sit amet orci. Proin eu pellentesque leo. Aliquam sollicitudin orci commodo metus vehicula interdum. Praesent sodales nec turpis quis sagittis. Sed scelerisque sed nibh non mollis.
+      |""".stripMargin
+
+  val lipsum2: String =
     """Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent varius viverra suscipit. Quisque tristique, dui ac pretium sagittis, metus odio condimentum metus, et accumsan purus tortor non mi. Proin iaculis tristique malesuada. Pellentesque ac justo non leo venenatis pharetra. Proin dictum neque eros, quis sagittis dolor venenatis facilisis. Aliquam pulvinar eros dolor, vel pellentesque nunc tristique et. Integer ac nunc placerat lectus aliquet pellentesque ac eu risus. Quisque suscipit urna lacinia purus vehicula, at rutrum neque vulputate. Curabitur placerat eleifend quam quis laoreet. Pellentesque id placerat justo, consectetur pharetra enim. Integer leo sapien, vulputate ut imperdiet non, suscipit sit amet eros.
       |Pellentesque quam velit, sodales quis congue in, interdum a tortor. In sed enim faucibus, laoreet elit ut, efficitur metus. Sed at pretium leo. Proin aliquet eget justo vel rutrum. Vivamus dictum neque libero, eget ornare purus tincidunt egestas. Aliquam vehicula hendrerit lectus, vitae tincidunt eros. Aliquam erat volutpat. Mauris massa leo, gravida a dignissim ut, maximus sit amet orci. Proin eu pellentesque leo. Aliquam sollicitudin orci commodo metus vehicula interdum. Praesent sodales nec turpis quis sagittis. Sed scelerisque sed nibh non mollis.
       |Sed sit amet vulputate enim. In erat neque, elementum a urna eu, consectetur pulvinar massa. Nunc magna arcu, mollis at dictum vitae, feugiat id mi. Fusce eu lorem mauris. Pellentesque laoreet euismod lacus eget eleifend. Vivamus justo nisi, consectetur euismod tempus eget, suscipit a arcu. Suspendisse potenti. Integer eu posuere mauris, consectetur ornare sapien. Praesent molestie, nunc ut gravida varius, lectus nunc consequat purus, eu fringilla libero risus sed odio. Aliquam eu lorem vitae ex congue posuere. Phasellus vitae consectetur neque, ut dictum ligula.
@@ -17,8 +22,10 @@ object Lipsum {
 
   private val defaultStyle =
     HMap[ParagraphStyle](
-      FontFamily -> "Arvo",
-      FontStyle -> "normal"
+      FontFamily -> "Times",
+      FontWeight -> 400,
+      FontStyle -> "normal",
+      FontSize -> 16
     )
 
   def flowFromString(s: String): Flow =

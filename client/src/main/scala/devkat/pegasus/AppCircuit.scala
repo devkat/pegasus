@@ -31,7 +31,7 @@ object AppCircuit extends Circuit[EditorModel] {
 
         case ReplaceFlow(flow) => updated(flow)
 
-        case Insert(c) => updated(Character(c, HMap.empty) +: value)
+        case Insert(c) => updated(value :+ Character(c, HMap.empty))
 
       }
   }
