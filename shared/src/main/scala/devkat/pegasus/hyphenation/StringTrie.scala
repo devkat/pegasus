@@ -78,7 +78,7 @@ class StringTrie[+T] private(val value: Option[T], children: Map[Char, StringTri
 @SuppressWarnings(Array("org.wartremover.warts.All"))
 object StringTrie {
 
-  def empty[T](): StringTrie[T] =
+  def empty[T]: StringTrie[T] =
     new StringTrie(None, Map())
 
   val Empty = empty

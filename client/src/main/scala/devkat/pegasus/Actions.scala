@@ -1,6 +1,7 @@
 package devkat.pegasus
 
 import devkat.pegasus.fonts.Fonts
+import devkat.pegasus.hyphenation.HyphenationSpec
 import devkat.pegasus.model.sequential.Flow
 import diode.Action
 import diode.data.{Pot, PotAction}
@@ -15,6 +16,12 @@ object Actions {
     extends PotAction[Fonts, LoadFonts] {
     def next(newResult: Pot[Fonts]): LoadFonts =
       LoadFonts(newResult)
+  }
+
+  final case class LoadHyphenationSpec(potResult: Pot[HyphenationSpec])
+    extends PotAction[HyphenationSpec, LoadHyphenationSpec] {
+    def next(newResult: Pot[HyphenationSpec]): LoadHyphenationSpec =
+      LoadHyphenationSpec(newResult)
   }
 
 }

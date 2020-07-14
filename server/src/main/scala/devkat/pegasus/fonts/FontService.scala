@@ -8,7 +8,7 @@ import org.apache.fop.svg.PDFDocumentGraphics2DConfigurator
 
 import scala.jdk.CollectionConverters._
 
-object FontManager {
+object FontService {
 
   private val unicodeBlocks = Seq(
     0x0000 to 0x024F,

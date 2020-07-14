@@ -4,10 +4,9 @@ import cats.data.ReaderWriterStateT._
 import cats.data.{EitherT, ReaderWriterStateT}
 import cats.implicits._
 import cats.{Applicative, Monad}
-import devkat.pegasus.layout.Glyph
-import devkat.pegasus.model.Style.{CharacterStyle, ParagraphStyle}
+import devkat.pegasus.hyphenation.Hyphenator
+import devkat.pegasus.model.{CharacterStyle, ParagraphStyle}
 import devkat.pegasus.model.sequential._
-import shapeless.HMap
 
 import scala.annotation.tailrec
 
@@ -35,7 +34,7 @@ object Layout {
 
   def layoutParagraph[
     F[_] : Monad
-  ](style: HMap[ParagraphStyle],
+  ](style: ParagraphStyle,
     tail: Flow,
     maxWidth: Double,
     y: Double): LayoutRW[F, List[Line]] = {
@@ -58,7 +57,7 @@ object Layout {
   def layoutLines[
     F[_] : Monad
   ](flow: Flow,
-    paraStyle: HMap[ParagraphStyle],
+    paraStyle: ParagraphStyle,
     y: Double,
     maxWidth: Double): LayoutRW[F, List[Line]] =
     layoutLines2[F](Nil, Nil, flow, 0, y + 20, maxWidth, None, paraStyle)
@@ -72,14 +71,14 @@ object Layout {
     x: Double,
     y: Double,
     maxWidth: Double,
-    charStyle: Option[HMap[CharacterStyle]],
-    paraStyle: HMap[ParagraphStyle]): LayoutRW[F, List[Line]] =
+    charStyle: Option[CharacterStyle],
+    paraStyle: ParagraphStyle): LayoutRW[F, List[Line]] =
     rest match {
       case Nil => pure(if (elemAcc.isEmpty) lineAcc else lineAcc :+ mkLine(x, y, elemAcc))
       case nonEmpty =>
-        val (chunk, restAfterChunk) = nextChunk(nonEmpty, x === 0)
         for {
-          elems <- layoutChunk[F](chunk, x, paraStyle)
+          tuple <- layoutNextChunk[F](nonEmpty, dropSpaces = x === 0, x, maxWidth, paraStyle)
+          (chunk, elems, restAfterChunk) = tuple
           result <- {
             val endX: Double = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(0)
 
@@ -114,41 +113,72 @@ object Layout {
   private def mkLine(x: Double, y: Double, elems: List[LineElement]): Line =
     Line(Box(x, y, elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(0), 20), elems)
 
-  private def layoutChunk[
+  private def createGlyph[
     F[_] : Monad
-  ](flow: List[Element],
-    startX: Double,
-    paraStyle: HMap[ParagraphStyle]): LayoutRW[F, List[LineElement]] =
-    flow
-      .foldLeftM((
-        List.empty[LineElement], // accumulated line elements
-        Option.empty[Character] // previous character (for kerning)
-      )) { case ((elems, prev), e) =>
-        val x = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(startX)
-        for {
-          layoutElementOption <- e match {
+  ](paraStyle: ParagraphStyle, prev: Option[Character], c: Character, x: Double): LayoutRW[F, Option[Glyph]] =
+    for {
+      kernAndWidthE <- Glyphs.kerningAndWidth[F](c, prev, paraStyle)
+      kernAndWidthO <- EitherT
+        .fromEither[LayoutRW[F, *]](kernAndWidthE)
+        .map(Some(_))
+        .valueOrF(error => log[F](error).as(Option.empty[(Double, Double)]))
+      glyph <- kernAndWidthO.traverse { case (k, w) => mkGlyph[F](Box(x + k, 0, w, 0), c) }
+    } yield glyph
 
-            case c: Character =>
-              for {
-                kernAndWidthE <- Glyphs.kerningAndWidth[F](c, prev, paraStyle)
-                kernAndWidthO <- EitherT
-                  .fromEither[LayoutRW[F, *]](kernAndWidthE)
-                  .map(Some(_))
-                  .valueOrF(error => log[F](error).as(Option.empty[(Double, Double)]))
-                glyph <- kernAndWidthO.traverse { case (k, w) => mkGlyph[F](Box(x + k, 0, w, 0), c) }
-              } yield glyph
-
-            case other =>
-              log[F]("Unsupported element: " + other.toString).as(None)
+  private def mkGlyph[
+    F[_] : Monad
+  ](box: Box, c: Character): LayoutRW[F, Glyph] =
+    ask[F, LayoutEnv, List[String], Unit].map { env =>
+      val (char, hidden) =
+        if (env.settings.showHiddenCharacters)
+          c.char match {
+            case ' ' => ('·', true)
+            case other => (other, false)
           }
-        } yield
-          layoutElementOption.fold(
-            (elems, Option.empty[Character])
-          )(
-            glyph => (elems :+ glyph, Some(glyph.char))
-          )
+        else
+          (c.char, false)
+      Glyph(box, c.copy(char = char), hidden)
+    }
+
+  private def layoutNextChunk[
+    F[_] : Monad
+  ](flow: Flow,
+    dropSpaces: Boolean,
+    x: Double,
+    maxWidth: Double,
+    paraStyle: ParagraphStyle): LayoutRW[F, (Flow, List[LineElement], Flow)] = {
+    val (chunk, restAfterChunk) = nextChunk(flow, dropSpaces)
+    for {
+      elems <- layoutChunk[F](chunk, x, paraStyle)
+      endX = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(x)
+      result <-
+        if (endX < maxWidth)
+          pure[F, LayoutEnv, List[String], Unit, (Flow, List[LineElement], Flow)]((chunk, elems, restAfterChunk))
+        else {
+          val word = chunk
+            .map {
+              case Character(c, _) => c
+              case _ => "#"
+            }
+            .mkString
+          for {
+            hyphenated <- hyphenate[F](word)
+            //_ = println(word + " - " + hyphenated.toString)
+          } yield ((chunk, elems, restAfterChunk))
+        }
+
+    } yield result
+  }
+
+  private def hyphenate[
+    F[_] : Monad
+  ](word: String): LayoutRW[F, List[String]] =
+    ask[F, LayoutEnv, List[String], Unit]
+      .map { env =>
+        // FIXME build only once
+        Hyphenator.load("en", env.hyphenationSpec).hyphenate(word.trim)
       }
-      .map { case (elems, _) => elems }
+
 
   private def nextChunk(flow: Flow, dropSpaces: Boolean): (Flow, Flow) = {
     def isSpace: Element => Boolean = {
@@ -166,21 +196,6 @@ object Layout {
     (space.toList ::: chunk, rest)
   }
 
-  private def mkGlyph[
-    F[_] : Monad
-  ](box: Box, c: Character): LayoutRW[F, Glyph] =
-    ask[F, LayoutEnv, List[String], Unit].map { env =>
-      val (char, hidden) =
-        if (env.settings.showHiddenCharacters)
-          c.char match {
-            case ' ' => ('·', true)
-            case other => (other, false)
-          }
-        else
-          (c.char, false)
-      Glyph(box, c.copy(char = char), hidden)
-    }
-
   @tailrec
   private def calcNextChunk(acc: Flow, flow: Flow): (Flow, Flow) =
     flow match {
@@ -191,6 +206,33 @@ object Layout {
         if (char.isWordBreak) (acc, c :: tail)
         else calcNextChunk(acc :+ c, tail)
     }
+
+  private def layoutChunk[
+    F[_] : Monad
+  ](flow: List[Element],
+    startX: Double,
+    paraStyle: ParagraphStyle): LayoutRW[F, List[LineElement]] =
+    flow
+      .foldLeftM((
+        List.empty[LineElement], // accumulated line elements
+        Option.empty[Character] // previous character (for kerning)
+      )) { case ((elems, prev), e) =>
+        val x = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(startX)
+        for {
+          layoutElementOption <- e match {
+            case c: Character =>
+              createGlyph[F](paraStyle, prev, c, x)
+            case other =>
+              log[F]("Unsupported element: " + other.toString).as(None)
+          }
+        } yield
+          layoutElementOption.fold(
+            (elems, Option.empty[Character])
+          )(
+            glyph => (elems :+ glyph, Some(glyph.char))
+          )
+      }
+      .map { case (elems, _) => elems }
 
   private implicit final class CharSyntax(val c: Char) {
 

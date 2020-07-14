@@ -13,9 +13,8 @@
  */
 package devkat.pegasus.hyphenation
 
-import scala.util.Try
 import scala.annotation.tailrec
-import scala.io.Source
+import scala.util.Try
 
 /** An hyphenator instance for a given language, with given patterns
  * and given exceptions allows you to get the possible hyphenations
@@ -25,36 +24,22 @@ import scala.io.Source
  * @author Lucas Satabin
  */
 @SuppressWarnings(Array("org.wartremover.warts.All"))
-class Hyphenator(val language: String, pats: List[String], exns: List[String], val threshold: Int) {
-
-  object int {
-    def unapply(s: String): Option[Int] =
-      Try(s.toInt).toOption
-  }
+class Hyphenator(language: String, spec: HyphenationSpec, threshold: Int) {
 
   /** List of exceptions for this hyphenator.
    * To each lower-case exception word it associate the lower-case
    * split word were hyphenations are possible */
-  val exceptions: Map[String, List[String]] =
+  lazy val exceptions: Map[String, List[String]] =
     (for {
-      word <- exns
+      word <- spec.exceptions
       lower = word.trim.toLowerCase
     } yield lower.replace("-", "") -> lower.split("-").toList).toMap
 
-  /** List of patterns for this hypehenator.
+  /** List of patterns for this hyphenator.
    * Whenever a word is not an exception it is looked for hyphenation
    * using the patterns registered in this list */
-  val patterns: StringTrie[List[Int]] =
-    pats.foldLeft(StringTrie.empty[List[Int]]) { (trie, pattern) =>
-      // a pattern is a sequence of letters and a sequence of hyphenation points
-      // e.g. pattern '.tri1o2n' becomes sequences '.trion' and '000012'
-      val trimmed = pattern.trim
-      val chars = trimmed.replaceAll("[0-9]", "")
-      val points = trimmed.split("['\\.\\p{L}]").map {
-        case "" => 0
-        case int(i) => i
-        case s => throw new Exception(s"Malformed pattern $trimmed. Expected integer, but $s found")
-      }.toList
+  lazy val patterns: StringTrie[List[Int]] =
+    spec.patterns.foldLeft(StringTrie.empty[List[Int]]) { case (trie, Pattern(chars, points)) =>
       trie.updated(chars, points)
     }
 
@@ -66,7 +51,7 @@ class Hyphenator(val language: String, pats: List[String], exns: List[String], v
         hyphenized
       case None =>
         // ok let's do the real job here, this is no exception
-        if (word.size <= threshold) {
+        if (word.length <= threshold) {
           // however if the word is ridicilously small, there is no point in hyphenating it
           List(word)
         } else {
@@ -140,24 +125,10 @@ object Hyphenator {
 
   val defaultThreshold: Int = 4
 
-  def load(language: String): Hyphenator = {
-    val patterns = {
-      val stream = getClass.getResourceAsStream(s"/patterns-$language.txt")
-      if (stream != null)
-        Source.fromInputStream(stream).getLines.filterNot(_.startsWith("#")).toList
-      else
-        Nil
-    }
-
-    val exceptions = {
-      val stream = getClass.getResourceAsStream(s"/exceptions-$language.txt")
-      if (stream != null)
-        Source.fromInputStream(stream).getLines.filterNot(_.startsWith("#")).toList
-      else
-        Nil
-    }
-
-    new Hyphenator(language, patterns, exceptions, defaultThreshold)
-  }
+  def load(lang: String, spec: HyphenationSpec): Hyphenator =
+    new Hyphenator(
+      lang,
+      spec,
+      defaultThreshold)
 
 }

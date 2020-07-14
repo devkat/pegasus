@@ -1,5 +1,6 @@
 package devkat.pegasus.view
 
+import cats.implicits._
 import devkat.pegasus.Actions.Insert
 import devkat.pegasus.AppCircuit
 import devkat.pegasus.layout.{LayoutEnv, LayoutSettings}
@@ -16,7 +17,8 @@ object RootModelView {
 
   private lazy val layoutSettings: LayoutSettings =
     LayoutSettings(
-      showHiddenCharacters = true
+      showHiddenCharacters = true,
+      hyphenate = true
     )
 
   def render(model: ModelRO[EditorModel], dispatcher: Dispatcher): JsDom.TypedTag[Div] = {
@@ -28,27 +30,38 @@ object RootModelView {
         case _ => ""
       })
     div(
-      model.value.fonts.toOption.map(fonts =>
-        div(
-          div(
-            input(
-              tpe := "text",
-              onkeypress := { (e: KeyboardEvent) =>
-                AppCircuit(Insert(e.keyCode.toChar))
-              }
-            )
-          ),
-          svg(
-            `class` := "pegasus",
-            FlowView.render(model.zoom(_.flow), LayoutEnv(fonts, layoutSettings))
-          ),
-          div(
-            fonts.fonts
-              .sortBy(f => f.family.value -> f.style.value)
-              .map(f => div(f.family.value + " / " + f.style.value + " / " + f.weight.value.toString))
-          )
+      Tuple2
+        .apply(
+          model.value.fonts.toOption,
+          model.value.hyphenationSpec.toOption
         )
-      ),
+        .mapN { case (fonts, hyphenationSpec) =>
+          val layoutEnv =
+            LayoutEnv(
+              layoutSettings,
+              fonts,
+              hyphenationSpec
+            )
+          div(
+            div(
+              input(
+                tpe := "text",
+                onkeypress := { (e: KeyboardEvent) =>
+                  AppCircuit(Insert(e.keyCode.toChar))
+                }
+              )
+            ),
+            svg(
+              `class` := "pegasus",
+              FlowView.render(model.zoom(_.flow), layoutEnv)
+            ),
+            div(
+              fonts.fonts
+                .sortBy(f => f.family.value -> f.style.value)
+                .map(f => div(f.family.value + " / " + f.style.value + " / " + f.weight.value.toString))
+            )
+          )
+        },
       div(
         `class` := "status-bar",
         status

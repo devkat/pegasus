@@ -13,6 +13,10 @@
  */
 package devkat.pegasus
 
+import devkat.pegasus.fonts.Font
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+
 package object hyphenation {
 
   @SuppressWarnings(Array("org.wartremover.warts.All"))
@@ -22,6 +26,21 @@ package object hyphenation {
         None
       else
         Some(s.head -> s.tail)
+  }
+
+  final case class Pattern(chars: String, points: List[Int])
+
+  object Pattern {
+    implicit lazy val decoder: Decoder[Pattern] = deriveDecoder
+    implicit lazy val encoder: Encoder[Pattern] = deriveEncoder
+  }
+
+  final case class HyphenationSpec(patterns: List[Pattern],
+                                   exceptions: List[String])
+
+  object HyphenationSpec {
+    implicit lazy val decoder: Decoder[HyphenationSpec] = deriveDecoder
+    implicit lazy val encoder: Encoder[HyphenationSpec] = deriveEncoder
   }
 
 }

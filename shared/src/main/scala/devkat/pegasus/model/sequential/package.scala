@@ -1,9 +1,6 @@
 package devkat.pegasus.model
 
 import devkat.pegasus.model.nested.{Character => NestedCharacter, Element => NestedElement, Flow => NestedFlow}
-import devkat.pegasus.model.Style.{CharacterStyle, ParagraphStyle}
-import devkat.pegasus.model.StyleAttr.FontFamily
-import shapeless.HMap
 
 package object sequential {
 
@@ -20,17 +17,17 @@ package object sequential {
 
   sealed trait Element
 
-  sealed abstract class InlineElement(style: HMap[CharacterStyle]) extends Element
+  sealed abstract class InlineElement(style: CharacterStyle) extends Element
 
-  final case class Character(char: Char, style: HMap[CharacterStyle]) extends InlineElement(style)
+  final case class Character(char: Char, style: CharacterStyle) extends InlineElement(style)
 
-  final case class InlineImage(image: String, style: HMap[CharacterStyle]) extends InlineElement(style)
+  final case class InlineImage(image: String, style: CharacterStyle) extends InlineElement(style)
 
-  final case class Paragraph(style: HMap[ParagraphStyle]) extends Element
+  final case class Paragraph(style: ParagraphStyle) extends Element
 
   object Element {
 
-    def fromFlowElement(style: HMap[CharacterStyle]): NestedElement => Element = {
+    def fromFlowElement(style: CharacterStyle): NestedElement => Element = {
       case NestedCharacter(c) => Character(c, style)
     }
 

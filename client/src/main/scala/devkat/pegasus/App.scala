@@ -1,6 +1,6 @@
 package devkat.pegasus
 
-import devkat.pegasus.Actions.LoadFonts
+import devkat.pegasus.Actions.{LoadFonts, LoadHyphenationSpec}
 import devkat.pegasus.model.editor.EditorModel
 import devkat.pegasus.view.RootModelView
 import diode.ModelRO
@@ -17,8 +17,8 @@ object App {
 
     AppCircuit.subscribe(rootModel)(_ => render(rootModel))
 
-    //AppCircuit.dispatch(ReplaceFlow(AppCircuit.initialModel.flow))
     AppCircuit.dispatch(LoadFonts(Pot.empty))
+    AppCircuit.dispatch(LoadHyphenationSpec(Pot.empty))
 
   }
 

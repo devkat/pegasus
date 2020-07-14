@@ -3,12 +3,10 @@ package devkat.pegasus.layout
 import cats.Monad
 import cats.data.ReaderWriterStateT.ask
 import cats.implicits._
-import devkat.pegasus.fonts.{FontKey, Fonts}
+import devkat.pegasus.fonts.FontKey
 import devkat.pegasus.layout.Layout.LayoutRW
-import devkat.pegasus.model.Style.ParagraphStyle
-import devkat.pegasus.model.StyleAttr.{FontFamily, FontSize, FontStyle, FontWeight}
+import devkat.pegasus.model.ParagraphStyle
 import devkat.pegasus.model.sequential.Character
-import shapeless.HMap
 
 object Glyphs {
 
@@ -17,7 +15,7 @@ object Glyphs {
   def width[
     F[_] : Monad
   ](char: Character,
-    paraStyle: HMap[ParagraphStyle]): LayoutRW[F, Either[String, Double]] =
+    paraStyle: ParagraphStyle): LayoutRW[F, Either[String, Double]] =
     kerningAndWidth[F](char, None, paraStyle)
       .map(_.map { case (_, width) => width })
 
@@ -25,14 +23,14 @@ object Glyphs {
     F[_] : Monad
   ](char: Character,
     prev: Option[Character],
-    paraStyle: HMap[ParagraphStyle]): LayoutRW[F, Either[String, (Double, Double)]] =
+    paraStyle: ParagraphStyle): LayoutRW[F, Either[String, (Double, Double)]] =
     ask[F, LayoutEnv, List[String], Unit].map(env =>
       Tuple4
         .apply(
-          char.style.get(FontFamily).orElse(paraStyle.get(FontFamily)).toRight("Font family not set"),
-          char.style.get(FontWeight).orElse(paraStyle.get(FontWeight)).toRight("Font weight not set"),
-          char.style.get(FontStyle).orElse(paraStyle.get(FontStyle)).toRight("Font style not set"),
-          char.style.get(FontSize).orElse(paraStyle.get(FontSize)).toRight("Font size not set")
+          char.style.fontFamily.orElse(paraStyle.fontFamily).toRight("Font family not set"),
+          char.style.fontWeight.orElse(paraStyle.fontWeight).toRight("Font weight not set"),
+          char.style.fontStyle.orElse(paraStyle.fontStyle).toRight("Font style not set"),
+          char.style.fontSize.orElse(paraStyle.fontSize).toRight("Font size not set")
         )
         .tupled
         .flatMap { case (fontFamily, fontWeight, fontStyle, fontSize) =>
