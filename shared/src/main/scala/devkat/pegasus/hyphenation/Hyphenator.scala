@@ -24,7 +24,8 @@ import scala.io.Source
  *
  * @author Lucas Satabin
  */
-class Hyphenator(val language: String, pats: List[String], exns: List[String], val threshold: Int = 4) {
+@SuppressWarnings(Array("org.wartremover.warts.All"))
+class Hyphenator(val language: String, pats: List[String], exns: List[String], val threshold: Int) {
 
   object int {
     def unapply(s: String): Option[Int] =
@@ -134,7 +135,10 @@ class Hyphenator(val language: String, pats: List[String], exns: List[String], v
 
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.All"))
 object Hyphenator {
+
+  val defaultThreshold: Int = 4
 
   def load(language: String): Hyphenator = {
     val patterns = {
@@ -153,7 +157,7 @@ object Hyphenator {
         Nil
     }
 
-    new Hyphenator(language, patterns, exceptions)
+    new Hyphenator(language, patterns, exceptions, defaultThreshold)
   }
 
 }

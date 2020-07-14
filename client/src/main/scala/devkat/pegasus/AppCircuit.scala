@@ -2,10 +2,9 @@ package devkat.pegasus
 
 import devkat.pegasus.Actions.{Insert, LoadFonts, ReplaceFlow}
 import devkat.pegasus.examples.Lipsum
-import devkat.pegasus.fonts.{FontFamily, Fonts}
-import devkat.pegasus.model.EditorModel
-import devkat.pegasus.model.Style.CharacterStyle
+import devkat.pegasus.fonts.Fonts
 import devkat.pegasus.model.sequential.{Character, Flow}
+import devkat.pegasus.model.editor.{EditorModel, Settings}
 import diode._
 import diode.data.Pot
 import diode.data.PotState._
@@ -22,39 +21,45 @@ object AppCircuit extends Circuit[EditorModel] {
       flow = Flow.fromNestedFlow(Lipsum.flowFromString(Lipsum.lipsum)),
       selection = None,
       fonts = Pot.empty,
+      settings = Settings.default,
       status = None
     )
   }
 
-  val flowHandler = new ActionHandler(zoomTo(_.flow)) {
-    override def handle = {
+  private val flowHandler: ActionHandler[EditorModel, Flow] =
+    new ActionHandler(zoomTo(_.flow)) {
+      override def handle = {
 
         case ReplaceFlow(flow) => updated(flow)
 
         case Insert(c) => updated(value :+ Character(c, HMap.empty))
 
       }
-  }
-
-  val fontHandler = new ActionHandler(zoomTo(_.fonts)) {
-    override def handle = {
-      case action: LoadFonts =>
-        val updateEffect = action.effect(loadFonts())(identity)
-        action.handle {
-          case PotEmpty =>
-            updated(value.pending(), updateEffect)
-          case PotPending =>
-            noChange
-          case PotReady =>
-            updated(action.potResult)
-          case PotUnavailable =>
-            updated(value.unavailable())
-          case PotFailed =>
-            val ex = action.result.failed.get
-            updated(value.fail(ex))
-        }
     }
-  }
+
+  private val fontHandler: ActionHandler[EditorModel, Pot[Fonts]] =
+    new ActionHandler(zoomTo(_.fonts)) {
+      override def handle = {
+        case action: LoadFonts =>
+          val updateEffect = action.effect(loadFonts())(identity)
+          action.handle {
+            case PotEmpty =>
+              updated(value.pending(), updateEffect)
+            case PotPending =>
+              noChange
+            case PotReady =>
+              updated(action.potResult)
+            case PotUnavailable =>
+              updated(value.unavailable())
+            case PotFailed =>
+              action.result.failed.fold(
+                throwable => updated(value.fail(throwable)),
+                _ => noChange
+              )
+
+          }
+      }
+    }
 
   override val actionHandler = composeHandlers(flowHandler, fontHandler)
 

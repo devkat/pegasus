@@ -13,6 +13,7 @@
  */
 package devkat.pegasus.hyphenation
 
+@SuppressWarnings(Array("org.wartremover.warts.All"))
 class StringTrie[+T] private(val value: Option[T], children: Map[Char, StringTrie[T]]) {
 
   def get(key: String): Option[T] = key match {
@@ -74,6 +75,7 @@ class StringTrie[+T] private(val value: Option[T], children: Map[Char, StringTri
 
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.All"))
 object StringTrie {
 
   def empty[T](): StringTrie[T] =

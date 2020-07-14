@@ -11,7 +11,7 @@ object Actions {
 
   final case class Insert(c: Char) extends Action
 
-  case class LoadFonts(potResult: Pot[Fonts] = Pot.empty)
+  final case class LoadFonts(potResult: Pot[Fonts])
     extends PotAction[Fonts, LoadFonts] {
     def next(newResult: Pot[Fonts]): LoadFonts =
       LoadFonts(newResult)

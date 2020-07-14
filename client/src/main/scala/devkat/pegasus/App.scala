@@ -1,13 +1,14 @@
 package devkat.pegasus
 
-import devkat.pegasus.Actions.{LoadFonts, ReplaceFlow}
-import devkat.pegasus.examples.Lipsum
-import devkat.pegasus.model.EditorModel
+import devkat.pegasus.Actions.LoadFonts
+import devkat.pegasus.model.editor.EditorModel
 import devkat.pegasus.view.RootModelView
 import diode.ModelRO
-import scalatags.JsDom.all._
+import diode.data.Pot
 import org.scalajs.dom
+import scalatags.JsDom.all._
 
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object App {
 
   def main(args: Array[String]): Unit = {
@@ -17,11 +18,11 @@ object App {
     AppCircuit.subscribe(rootModel)(_ => render(rootModel))
 
     //AppCircuit.dispatch(ReplaceFlow(AppCircuit.initialModel.flow))
-    AppCircuit.dispatch(LoadFonts())
+    AppCircuit.dispatch(LoadFonts(Pot.empty))
 
   }
 
-  def render(rootModel: ModelRO[EditorModel]) = {
+  def render(rootModel: ModelRO[EditorModel]): Unit = {
 
     val e = div(
       cls := "app-container",

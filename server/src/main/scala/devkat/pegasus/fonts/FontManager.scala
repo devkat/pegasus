@@ -35,7 +35,9 @@ object FontManager {
   def getFonts[F[_] : Sync]: F[Fonts] = Sync[F].delay {
     val fontInfo = PDFDocumentGraphics2DConfigurator.createFontInfo(fopConfig, false)
     val typefaces = fontInfo.getFonts
-    val fontInfos = fontInfo.getFontTriplets.asScala.toList.map { case (triplet, key) =>
+    val fontInfos = fontInfo.getFontTriplets.asScala.toList
+      .filter(f => f._1.getName.startsWith("Arvo") || f._1.getName.startsWith("Times"))
+      .map { case (triplet, key) =>
       val tf = typefaces.get(key)
       val typeface = tf match {
         case font: LazyFont => font.getRealFont
@@ -50,7 +52,9 @@ object FontManager {
         blocks = unicodeBlocks.toList.map(unicodeBlock(fopFont, _)),
         kerning = metrics.getKerningInfo.asScala.flatMap { case (a, m) =>
           //(a.toString, m.toMap.map { case (b, w) => (b.toString -> w.toInt) })
-          m.asScala.map { case (b, w) => (a.toChar + "," + b.toChar) -> (w.toInt * fopFont.getFontSize) }
+          m.asScala.map { case (b, w) =>
+            (a.toChar.toString + "," + b.toChar.toString) -> (w.toInt * fopFont.getFontSize)
+          }
         }.toMap
       )
     }
@@ -62,6 +66,7 @@ object FontManager {
     )
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
   private def unicodeBlock(font: FopFont, range: Range.Inclusive): Block = {
     val metrics = font.getFontMetrics
     val char2width: Map[String, Int] =

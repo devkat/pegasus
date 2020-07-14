@@ -8,7 +8,8 @@ lazy val commonSettings = Seq(
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
   scalacOptions ++= Seq(
     "-language:higherKinds"
-  )
+  ),
+  wartremoverErrors ++= Warts.allBut(Wart.Any, Wart.Nothing, Wart.ToString)
 )
 
 lazy val shared = crossProject(JSPlatform, JVMPlatform)
@@ -18,6 +19,7 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .settings(
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "cats-core" % "2.1.1",
+      "org.typelevel" %% "mouse" % "0.25",
       "com.beachape" %%% "enumeratum-circe" % "1.6.1"
     ) ++ Seq(
       "io.circe" %%% "circe-core",

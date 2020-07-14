@@ -15,6 +15,7 @@ package devkat.pegasus
 
 package object hyphenation {
 
+  @SuppressWarnings(Array("org.wartremover.warts.All"))
   private[hyphenation] object !:: {
     def unapply(s: String): Option[(Char, String)] =
       if(s == null || s.isEmpty)

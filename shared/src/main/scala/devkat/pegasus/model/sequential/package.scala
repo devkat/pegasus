@@ -20,7 +20,11 @@ package object sequential {
 
   sealed trait Element
 
-  final case class Character(char: Char, style: HMap[CharacterStyle]) extends Element
+  sealed abstract class InlineElement(style: HMap[CharacterStyle]) extends Element
+
+  final case class Character(char: Char, style: HMap[CharacterStyle]) extends InlineElement(style)
+
+  final case class InlineImage(image: String, style: HMap[CharacterStyle]) extends InlineElement(style)
 
   final case class Paragraph(style: HMap[ParagraphStyle]) extends Element
 

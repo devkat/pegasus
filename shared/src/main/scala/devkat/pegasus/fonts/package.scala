@@ -1,6 +1,7 @@
 package devkat.pegasus
 
 import cats.implicits._
+import cats.{Order, Show}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
 
@@ -8,11 +9,20 @@ package object fonts {
 
   final case class FontKey(family: String, weight: Int, style: String)
 
+  object FontKey {
+
+    implicit lazy val order: Order[FontKey] =
+      Order.by(_.show)
+
+    implicit lazy val show: Show[FontKey] =
+      Show.show(f => s"${f.family} ${f.weight.toString} ${f.style}")
+  }
+
   final case class Fonts(fonts: List[Font]) {
 
     private lazy val fontMap: Map[FontKey, Font] = {
       fonts
-        .groupBy(f => FontKey(f.family.value, f.weight.value, f.style.value))
+        .groupByNel(f => FontKey(f.family.value, f.weight.value, f.style.value))
         .view
         .mapValues(_.head)
         .toMap
