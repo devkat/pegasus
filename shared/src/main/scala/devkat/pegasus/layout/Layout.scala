@@ -3,14 +3,10 @@ package devkat.pegasus.layout
 import cats.data.ReaderWriterStateT._
 import cats.data.{EitherT, ReaderWriterStateT}
 import cats.implicits._
-import cats.effect.implicits._
 import cats.{Applicative, Monad}
-import devkat.pegasus.hyphenation.Hyphenator
-import devkat.pegasus.model.{CharacterStyle, ParagraphStyle}
+import devkat.pegasus.model.ParagraphStyle
 import devkat.pegasus.model.sequential._
-import fs2.Stream
-
-import scala.annotation.tailrec
+import devkat.pegasus.model.sequential.Flow.Syntax
 
 object Layout {
 
@@ -62,7 +58,7 @@ object Layout {
     paraStyle: ParagraphStyle,
     y: Double,
     maxWidth: Double): LayoutRW[F, List[Line]] =
-    layoutLines2[F](Nil, Nil, flow, 0, y + 20, maxWidth, None, paraStyle)
+    layoutLines2[F](Nil, Nil, flow, 0, y + 20, maxWidth, paraStyle)
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   private def layoutLines2[
@@ -73,18 +69,14 @@ object Layout {
     x: Double,
     y: Double,
     maxWidth: Double,
-    charStyle: Option[CharacterStyle],
     paraStyle: ParagraphStyle): LayoutRW[F, List[Line]] =
     rest match {
       case Nil => pure(if (elemAcc.isEmpty) lineAcc else lineAcc :+ mkLine(x, y, elemAcc))
       case nonEmpty =>
         for {
-          tuple <- layoutNextChunk[F](nonEmpty, dropSpaces = x === 0, x, maxWidth, paraStyle)
-          (chunk, elems, restAfterChunk) = tuple
-          result <- {
-            val endX: Double = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(0)
-
-            if (endX > maxWidth)
+          chunkOption <- layoutNextChunk[F](nonEmpty, dropSpaces = x === 0, x, maxWidth, paraStyle)
+          result <- chunkOption match {
+            case None =>
               layoutLines2[F](
                 lineAcc :+ mkLine(x, y, elemAcc),
                 List.empty[LineElement],
@@ -92,20 +84,16 @@ object Layout {
                 0.0,
                 y + 20,
                 maxWidth,
-                charStyle,
                 paraStyle
               )
-            else
+            case Some((elems, chunkRest)) =>
               layoutLines2[F](
                 lineAcc,
                 elemAcc ::: elems,
-                restAfterChunk,
-                endX,
+                chunkRest,
+                elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(x),
                 y,
                 maxWidth,
-                chunk.reverse
-                  .collectFirst { case Character(_, style) => style }
-                  .orElse(charStyle),
                 paraStyle
               )
           }
@@ -148,51 +136,14 @@ object Layout {
     dropSpaces: Boolean,
     x: Double,
     maxWidth: Double,
-    paraStyle: ParagraphStyle): LayoutRW[F, (Flow, List[LineElement], Flow)] = {
-    val (chunk, restAfterChunk) = nextChunk(flow, dropSpaces)
+    paraStyle: ParagraphStyle): LayoutRW[F, Option[(List[LineElement], Flow)]] =
     for {
-      elems <- layoutChunk[F](chunk, x, paraStyle)
-      endX = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(x)
-      result <-
-        if (endX < maxWidth)
-          pure[F, LayoutEnv, List[String], Unit, (Flow, List[LineElement], Flow)]((chunk, elems, restAfterChunk))
-        else {
-          val fitting = Hyphenation
-            .chunkStream[F](chunk)
-            .evalMap(layoutChunk[F](_, x, paraStyle))
-            .find(_.lastOption.map(e => e.box.x + e.box.w).getOrElse(x) < maxWidth)
-            .compile
-            .toList
-        }
-    } yield result
-  }
-
-  private def nextChunk(flow: Flow, dropSpaces: Boolean): (Flow, Flow) = {
-    def isSpace: Element => Boolean = {
-      case Character(char, _) => char === ' '
-      case _ => false
-    }
-
-    val space: Option[Element] =
-      if (dropSpaces) Option.empty[Element]
-      else flow.headOption.filter(isSpace)
-
-    val afterSpaces = flow.dropWhile_(isSpace)
-
-    val (chunk, rest) = calcNextChunk(Nil, afterSpaces)
-    (space.toList ::: chunk, rest)
-  }
-
-  @tailrec
-  private def calcNextChunk(acc: Flow, flow: Flow): (Flow, Flow) =
-    flow match {
-      case Nil => (acc, Nil)
-      case (image: InlineImage) :: tail => (List(image), tail)
-      case (p: Paragraph) :: tail => (List(p), tail)
-      case (c@Character(char, _)) :: tail =>
-        if (char.isWordBreak) (acc, c :: tail)
-        else calcNextChunk(acc :+ c, tail)
-    }
+      env <- ask[F, LayoutEnv, List[String], Unit]
+      layoutChunks <- WordStream
+        .apply(flow, dropSpaces, env.hyphenationSpec)
+        .traverse { case (chunk, rest) => layoutChunk[F](chunk, x, paraStyle).map((_, rest)) }
+    } yield
+      layoutChunks.find { case (list @ init :+ e, _) => e.box.x + e.box.w < maxWidth }
 
   private def layoutChunk[
     F[_] : Monad

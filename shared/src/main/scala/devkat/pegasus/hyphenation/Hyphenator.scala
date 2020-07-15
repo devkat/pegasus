@@ -129,6 +129,6 @@ object Hyphenator {
     new Hyphenator(
       lang,
       spec,
-      defaultThreshold)
+      2)
 
 }

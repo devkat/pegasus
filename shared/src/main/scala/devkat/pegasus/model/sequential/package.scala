@@ -7,12 +7,24 @@ package object sequential {
   type Flow = List[Element]
 
   object Flow {
+
     def fromNestedFlow: NestedFlow => Flow =
       _.paragraphs.flatMap(p =>
         Paragraph(p.style) :: p.spans.flatMap(span =>
           span.elements.map(Element.fromFlowElement(span.style))
         )
       )
+
+    implicit class Syntax(val flow: List[Element]) extends AnyVal {
+      def asText: String =
+        flow
+          .map {
+            case Character(c, _) => c
+            case _ => "?"
+          }
+          .mkString
+    }
+
   }
 
   sealed trait Element
