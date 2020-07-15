@@ -20,12 +20,15 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "cats-core" % "2.1.1",
       "org.typelevel" %% "mouse" % "0.25",
-      "com.beachape" %%% "enumeratum-circe" % "1.6.1"
+      "com.beachape" %%% "enumeratum-circe" % "1.6.1",
+      "co.fs2" %%% "fs2-core" % "2.4.2"
     ) ++ Seq(
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
       "io.circe" %%% "circe-parser"
-    ).map(_ % "0.13.0")
+    ).map(_ % "0.13.0") ++ Seq(
+      "org.specs2" %% "specs2-core" % "4.10.0"
+    ).map(_  % "test")
   )
 
 /*

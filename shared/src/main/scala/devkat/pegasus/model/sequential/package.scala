@@ -17,11 +17,11 @@ package object sequential {
 
   sealed trait Element
 
-  sealed abstract class InlineElement(style: CharacterStyle) extends Element
+  sealed abstract class InlineElement(val style: CharacterStyle) extends Element
 
-  final case class Character(char: Char, style: CharacterStyle) extends InlineElement(style)
+  final case class Character(char: Char, override val style: CharacterStyle) extends InlineElement(style)
 
-  final case class InlineImage(image: String, style: CharacterStyle) extends InlineElement(style)
+  final case class InlineImage(image: String, override val style: CharacterStyle) extends InlineElement(style)
 
   final case class Paragraph(style: ParagraphStyle) extends Element
 

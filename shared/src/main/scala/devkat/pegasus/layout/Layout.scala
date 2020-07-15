@@ -3,10 +3,12 @@ package devkat.pegasus.layout
 import cats.data.ReaderWriterStateT._
 import cats.data.{EitherT, ReaderWriterStateT}
 import cats.implicits._
+import cats.effect.implicits._
 import cats.{Applicative, Monad}
 import devkat.pegasus.hyphenation.Hyphenator
 import devkat.pegasus.model.{CharacterStyle, ParagraphStyle}
 import devkat.pegasus.model.sequential._
+import fs2.Stream
 
 import scala.annotation.tailrec
 
@@ -155,30 +157,15 @@ object Layout {
         if (endX < maxWidth)
           pure[F, LayoutEnv, List[String], Unit, (Flow, List[LineElement], Flow)]((chunk, elems, restAfterChunk))
         else {
-          val word = chunk
-            .map {
-              case Character(c, _) => c
-              case _ => "#"
-            }
-            .mkString
-          for {
-            hyphenated <- hyphenate[F](word)
-            //_ = println(word + " - " + hyphenated.toString)
-          } yield ((chunk, elems, restAfterChunk))
+          val fitting = Hyphenation
+            .chunkStream[F](chunk)
+            .evalMap(layoutChunk[F](_, x, paraStyle))
+            .find(_.lastOption.map(e => e.box.x + e.box.w).getOrElse(x) < maxWidth)
+            .compile
+            .toList
         }
-
     } yield result
   }
-
-  private def hyphenate[
-    F[_] : Monad
-  ](word: String): LayoutRW[F, List[String]] =
-    ask[F, LayoutEnv, List[String], Unit]
-      .map { env =>
-        // FIXME build only once
-        Hyphenator.load("en", env.hyphenationSpec).hyphenate(word.trim)
-      }
-
 
   private def nextChunk(flow: Flow, dropSpaces: Boolean): (Flow, Flow) = {
     def isSpace: Element => Boolean = {
