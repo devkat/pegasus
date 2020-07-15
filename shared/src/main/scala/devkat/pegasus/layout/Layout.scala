@@ -2,6 +2,8 @@ package devkat.pegasus.layout
 
 import cats.data.ReaderWriterStateT._
 import cats.data.{EitherT, ReaderWriterStateT}
+import cats.effect.Async.ReaderWriterStateTAsync
+import cats.effect.{Async, Sync}
 import cats.implicits._
 import cats.effect.implicits._
 import cats.{Applicative, Monad}
@@ -17,12 +19,12 @@ object Layout {
   type LayoutRW[F[_], A] = ReaderWriterStateT[F, LayoutEnv, List[String], Unit, A]
 
   def apply[
-    F[_] : Monad
+    F[_] : Async
   ](flow: Flow, width: Double): LayoutRW[F, List[Line]] =
     layout[F](flow, width, 0)
 
   def layout[
-    F[_] : Monad
+    F[_] : Async
   ](flow: Flow, width: Double, y: Double): LayoutRW[F, List[Line]] =
     flow match {
       case Nil => pure(Nil)

@@ -3,7 +3,7 @@ package devkat.pegasus.layout
 import cats.{Applicative, Monad}
 import cats.data.ReaderWriterStateT.ask
 import cats.implicits._
-import devkat.pegasus.hyphenation.{HyphenationSpec, Hyphenator}
+import devkat.pegasus.hyphenation.Hyphenator
 import devkat.pegasus.layout.Layout.LayoutRW
 import devkat.pegasus.model.sequential
 import devkat.pegasus.model.sequential.{Character, Flow}
@@ -20,10 +20,14 @@ object Hyphenation {
       Option[List[String]] // remaining syllables
     )
 
-  def chunkStream(chunk: Flow, spec: HyphenationSpec): LazyList[Flow] = {
+  def chunkStream[
+    F[_] : Monad
+  ](chunk: Flow): Stream[LayoutRW[F, *], Flow] = {
 
-    LazyList
-      .unfold[Flow, State]((Some(chunk), None)) {
+    def pure[A](a: A): LayoutRW[F, A] = Applicative[LayoutRW[F, *]].pure(a)
+
+    Stream
+      .unfoldEval[LayoutRW[F, *], State, Flow]((Some(chunk), None)) {
         case (Some(chunk), None) =>
 
           val prefix = chunk.takeWhile {
@@ -72,12 +76,17 @@ object Hyphenation {
     else (appendHyphen(flow.take(h.length)), ((Some(flow.drop(h.length)), Some(t))))
 
   private def appendHyphen: Flow => Flow = {
-    case start :+ (last: Character) => start ::: last :: last.copy(char = '-') :: Nil
+    case start :+ (last: Character) => start ::: last :: Character('-', last.style) :: Nil
     case other => other
   }
 
-  private def hyphenate(word: String, spec: HyphenationSpec): List[String] =
-  // FIXME build only once
-    Hyphenator.load("en", spec).hyphenate(word.trim)
+  private def hyphenate[
+    F[_] : Monad
+  ](word: String): LayoutRW[F, List[String]] =
+    ask[F, LayoutEnv, List[String], Unit]
+      .map { env =>
+        // FIXME build only once
+        Hyphenator.load("en", env.hyphenationSpec).hyphenate(word.trim)
+      }
 
 }
