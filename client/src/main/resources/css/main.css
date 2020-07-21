@@ -2,7 +2,8 @@
 
   width: 600px;
   height: 600px;
-  border: solid 1px #999999;
+  border: solid 1px #EEEEEE;
+  overflow: visible;
 
 }
 
