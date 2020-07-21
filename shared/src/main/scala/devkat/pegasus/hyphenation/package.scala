@@ -22,7 +22,7 @@ package object hyphenation {
   @SuppressWarnings(Array("org.wartremover.warts.All"))
   private[hyphenation] object !:: {
     def unapply(s: String): Option[(Char, String)] =
-      if(s == null || s.isEmpty)
+      if (s == null || s.isEmpty)
         None
       else
         Some(s.head -> s.tail)
@@ -36,7 +36,28 @@ package object hyphenation {
   }
 
   final case class HyphenationSpec(patterns: List[Pattern],
-                                   exceptions: List[String])
+                                   exceptions: List[String]) {
+
+    /**
+     * To each lower-case exception word it associate the lower-case
+     * split word were hyphenations are possible
+     */
+    lazy val exceptionMap: Map[String, List[String]] =
+      (for {
+        word <- exceptions
+        lower = word.trim.toLowerCase
+      } yield lower.replace("-", "") -> lower.split("-").toList).toMap
+
+    /**
+     * Whenever a word is not an exception it is looked for hyphenation
+     * using the patterns registered in this list
+     */
+    lazy val patternTrie: StringTrie[List[Int]] =
+      patterns.foldLeft(StringTrie.empty[List[Int]]) { case (trie, Pattern(chars, points)) =>
+        trie.updated(chars, points)
+      }
+
+  }
 
   object HyphenationSpec {
     implicit lazy val decoder: Decoder[HyphenationSpec] = deriveDecoder

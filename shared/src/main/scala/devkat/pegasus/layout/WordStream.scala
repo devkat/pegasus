@@ -156,7 +156,6 @@ object WordStream {
   }
 
   private def hyphenate(word: String, spec: HyphenationSpec): List[String] =
-  // FIXME build only once
-    Hyphenator.load("en", spec).hyphenate(word.trim)
+    Hyphenator.hyphenate(word.trim, spec, Hyphenator.defaultThreshold)
 
 }

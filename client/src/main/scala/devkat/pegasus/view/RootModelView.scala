@@ -21,7 +21,7 @@ object RootModelView {
       hyphenate = true
     )
 
-  def render(model: ModelRO[EditorModel], dispatcher: Dispatcher): JsDom.TypedTag[Div] = {
+  def render(model: ModelRO[EditorModel], dispatch: Dispatcher): JsDom.TypedTag[Div] = {
     val status = model.value.status
       .getOrElse(model.value.fonts match {
         case Pending(_) => "Loading fonts …"
@@ -47,7 +47,7 @@ object RootModelView {
               input(
                 tpe := "text",
                 onkeypress := { (e: KeyboardEvent) =>
-                  AppCircuit(Insert(e.keyCode.toChar))
+                  dispatch(Insert(e.keyCode.toChar))
                 }
               )
             ),

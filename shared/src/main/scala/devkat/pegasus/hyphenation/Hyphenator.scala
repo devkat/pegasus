@@ -14,7 +14,6 @@
 package devkat.pegasus.hyphenation
 
 import scala.annotation.tailrec
-import scala.util.Try
 
 /** An hyphenator instance for a given language, with given patterns
  * and given exceptions allows you to get the possible hyphenations
@@ -24,28 +23,13 @@ import scala.util.Try
  * @author Lucas Satabin
  */
 @SuppressWarnings(Array("org.wartremover.warts.All"))
-class Hyphenator(language: String, spec: HyphenationSpec, threshold: Int) {
+object Hyphenator {
 
-  /** List of exceptions for this hyphenator.
-   * To each lower-case exception word it associate the lower-case
-   * split word were hyphenations are possible */
-  lazy val exceptions: Map[String, List[String]] =
-    (for {
-      word <- spec.exceptions
-      lower = word.trim.toLowerCase
-    } yield lower.replace("-", "") -> lower.split("-").toList).toMap
+  val defaultThreshold: Int = 4
 
-  /** List of patterns for this hyphenator.
-   * Whenever a word is not an exception it is looked for hyphenation
-   * using the patterns registered in this list */
-  lazy val patterns: StringTrie[List[Int]] =
-    spec.patterns.foldLeft(StringTrie.empty[List[Int]]) { case (trie, Pattern(chars, points)) =>
-      trie.updated(chars, points)
-    }
-
-  def hyphenate(word: String): List[String] = {
+  def hyphenate(word: String, spec: HyphenationSpec, threshold: Int): List[String] = {
     val lower = word.toLowerCase
-    exceptions.get(lower) match {
+    spec.exceptionMap.get(lower) match {
       case Some(hyphenized) =>
         // this is an exception, return it as is
         hyphenized
@@ -80,7 +64,7 @@ class Hyphenator(language: String, spec: HyphenationSpec, threshold: Int) {
             }
 
             // update the hyphenation points at this point
-            val acc1 = loopWord(word, patterns, acc)
+            val acc1 = loopWord(word, spec.patternTrie, acc)
 
             // and continue if needed
             if (word == null || word.isEmpty)
@@ -117,18 +101,5 @@ class Hyphenator(language: String, spec: HyphenationSpec, threshold: Int) {
     }
 
   }
-
-}
-
-@SuppressWarnings(Array("org.wartremover.warts.All"))
-object Hyphenator {
-
-  val defaultThreshold: Int = 4
-
-  def load(lang: String, spec: HyphenationSpec): Hyphenator =
-    new Hyphenator(
-      lang,
-      spec,
-      2)
 
 }
