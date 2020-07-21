@@ -12,6 +12,8 @@ object WordStream {
   //private lazy val isLetter: Predicate[String] = "\\p{L}".r.pattern.asMatchPredicate()
   private lazy val isLetter: Regex = "[a-zA-Z]".r
 
+  private sealed trait State
+
   // transcoding foo bar baz
   //
   //    Output                         State
@@ -19,17 +21,9 @@ object WordStream {
   // 2. (transco-, ding foo bar baz)   List(trans)
   // 3. (trans-, coding foo bar baz)   List()
 
-  type Result = (Flow, Option[Character], Flow)
+  private type Result = (Flow, Option[Character], Flow)
 
-  sealed trait Elem
-
-  final case class Word(elems: List[Element]) extends Elem
-
-  final case class Syllables(syllables: LazyList[Result])
-
-  def apply(flow: Flow, spec: HyphenationSpec): LazyList[(Flow, Option[Character])] = ???
-
-  def syllablesStream(flow: Flow, spec: HyphenationSpec): LazyList[Result] = {
+  def apply(flow: Flow, spec: HyphenationSpec): LazyList[Result] = {
 
     val (chunk, rest) = nextChunk(flow)
 
@@ -94,7 +88,7 @@ object WordStream {
 
                   case word :: Nil => Some((chars, chunk.space, rest), State.Syllables(Nil))
 
-                  case syllables@h :: (m :+ _) =>
+                  case syllables@h :: (m :+ t) =>
                     val remainingSyllables = (prefix.map(_.char).mkString + h) :: m
                     next(remainingSyllables, remainingSyllables)
                 }
