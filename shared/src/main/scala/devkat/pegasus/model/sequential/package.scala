@@ -15,16 +15,6 @@ package object sequential {
         )
       )
 
-    implicit class Syntax(val flow: List[Element]) extends AnyVal {
-      def asText: String =
-        flow
-          .map {
-            case Character(c, _) => c
-            case _ => "?"
-          }
-          .mkString
-    }
-
   }
 
   sealed trait Element

@@ -6,7 +6,6 @@ import cats.implicits._
 import cats.{Applicative, Monad}
 import devkat.pegasus.model.ParagraphStyle
 import devkat.pegasus.model.sequential._
-import devkat.pegasus.model.sequential.Flow.Syntax
 
 object Layout {
 
@@ -65,16 +64,17 @@ object Layout {
     F[_] : Monad
   ](lineAcc: List[Line],
     elemAcc: List[LineElement],
-    rest: Flow,
+    flow: Flow,
     x: Double,
     y: Double,
     maxWidth: Double,
-    paraStyle: ParagraphStyle): LayoutRW[F, List[Line]] =
+    paraStyle: ParagraphStyle): LayoutRW[F, List[Line]] = {
+    val rest = if (x === 0) flow.dropSpaces else flow
     rest match {
       case Nil => pure(if (elemAcc.isEmpty) lineAcc else lineAcc :+ mkLine(x, y, elemAcc))
       case nonEmpty =>
         for {
-          chunkOption <- layoutNextChunk[F](nonEmpty, dropSpaces = x === 0, x, maxWidth, paraStyle)
+          chunkOption <- layoutNextChunk[F](nonEmpty, x, maxWidth, paraStyle)
           result <- chunkOption match {
             case None =>
               layoutLines2[F](
@@ -99,6 +99,7 @@ object Layout {
           }
         } yield result
     }
+  }
 
   private def mkLine(x: Double, y: Double, elems: List[LineElement]): Line =
     Line(Box(x, y, elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(0), 20), elems)
@@ -133,23 +134,25 @@ object Layout {
   private def layoutNextChunk[
     F[_] : Monad
   ](flow: Flow,
-    dropSpaces: Boolean,
     x: Double,
     maxWidth: Double,
     paraStyle: ParagraphStyle): LayoutRW[F, Option[(List[LineElement], Flow)]] =
     for {
       env <- ask[F, LayoutEnv, List[String], Unit]
       layoutChunks <- WordStream
-        .apply(flow, dropSpaces, env.hyphenationSpec)
-        .traverse { case (chunk, rest) => layoutChunk[F](chunk, x, paraStyle).map((_, rest)) }
+        .apply(flow, env.hyphenationSpec)
+        .traverse { case (chunk, space, rest) => layoutChunk[F](chunk, space, x, paraStyle).map((_, rest)) }
     } yield
-      layoutChunks.find { case (list @ init :+ e, _) => e.box.x + e.box.w < maxWidth }
+      layoutChunks
+        .find { case ((list@init :+ e, _), _) => e.box.x + e.box.w < maxWidth }
+        .map { case ((elems, space), rest) => (elems ::: space.toList, rest) }
 
   private def layoutChunk[
     F[_] : Monad
   ](flow: List[Element],
+    space: Option[Character],
     startX: Double,
-    paraStyle: ParagraphStyle): LayoutRW[F, List[LineElement]] =
+    paraStyle: ParagraphStyle): LayoutRW[F, (List[LineElement], Option[LineElement])] =
     flow
       .foldLeftM((
         List.empty[LineElement], // accumulated line elements
@@ -171,6 +174,10 @@ object Layout {
           )
       }
       .map { case (elems, _) => elems }
+      .flatMap { elems =>
+        val x = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(startX)
+        space.flatTraverse(createGlyph[F](paraStyle, None, _, x)).map((elems, _))
+      }
 
   private implicit final class CharSyntax(val c: Char) {
 

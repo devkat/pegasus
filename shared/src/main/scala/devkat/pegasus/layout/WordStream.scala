@@ -21,22 +21,21 @@ object WordStream {
   // 2. (transco-, ding foo bar baz)   List(trans)
   // 3. (trans-, coding foo bar baz)   List()
 
-  def apply(flow: Flow, dropSpaces: Boolean, spec: HyphenationSpec): LazyList[(Flow, Flow)] = {
+  private type Result = (Flow, Option[Character], Flow)
 
-    val (chunk, rest) = nextChunk(flow, dropSpaces)
+  def apply(flow: Flow, spec: HyphenationSpec): LazyList[Result] = {
 
-    def prependSpace(flow: Flow): Flow =
-      chunk.space.toList ::: flow
+    val (chunk, rest) = nextChunk(flow)
 
     chunk.content match {
 
       case ChunkContent.Image(img) =>
-        LazyList((prependSpace(List(img)), rest))
+        LazyList((List(img), chunk.space, rest))
 
       case ChunkContent.Text(chars) =>
 
         val prefix = chars.takeWhile(c => !isLetter.matches(c.char.toString))
-        val noHyphenationResult = LazyList((prependSpace(chars), rest))
+        val noHyphenationResult = LazyList((chars, chunk.space, rest))
 
         if (prefix.length === chars.length)
           noHyphenationResult
@@ -52,15 +51,34 @@ object WordStream {
 
             sealed trait State
             object State {
+
               case object Initial extends State
+
               case object FullWord extends State
+
               final case class Syllables(syllables: List[String]) extends State
+
             }
 
-            LazyList.unfold[(Flow, Flow), State](State.Initial) {
+            def next(syllables: List[String], remainingSyllables: List[String]): Option[(Result, State)] = {
+              val length = syllables.map(_.length).sum
+              val (output, outputRest) = chars.splitAt(length)
+              Some(
+                (
+                  (
+                    appendHyphen(output),
+                    None,
+                    outputRest ::: chunk.space.toList ::: rest
+                  ),
+                  State.Syllables(remainingSyllables)
+                )
+              )
+            }
+
+            LazyList.unfold[Result, State](State.Initial) {
 
               case State.Initial =>
-                Some((prependSpace(chars), rest), State.FullWord)
+                Some((chars, chunk.space, rest), State.FullWord)
 
               case State.FullWord =>
 
@@ -68,23 +86,18 @@ object WordStream {
 
                   case Nil => sys.error("Programming error")
 
-                  case word :: Nil => Some((prependSpace(chars), rest), State.Syllables(Nil))
+                  case word :: Nil => Some((chars, chunk.space, rest), State.Syllables(Nil))
 
-                  case syllables @ h :: (m :+ t) =>
+                  case syllables@h :: (m :+ _) =>
                     val remainingSyllables = (prefix.map(_.char).mkString + h) :: m
-                    val length = remainingSyllables.map(_.length).sum
-                    val (output, outputRest) = chars.splitAt(length)
-                    Some((prependSpace(appendHyphen(output)), outputRest ::: rest), State.Syllables(remainingSyllables))
-
+                    next(remainingSyllables, remainingSyllables)
                 }
 
               case State.Syllables(Nil) =>
                 None
 
               case State.Syllables(init :+ t) =>
-                val length = (init :+ t).map(_.length).sum
-                val (output, outputRest) = chars.splitAt(length)
-                Some(((prependSpace(appendHyphen(output)), outputRest ::: rest), State.Syllables(init)))
+                next(init :+ t, init)
 
             }
 
@@ -95,7 +108,7 @@ object WordStream {
 
   }
 
-  private final case class Chunk(space: Option[Character], content: ChunkContent)
+  private final case class Chunk(content: ChunkContent, space: Option[Character])
 
   private sealed trait ChunkContent
 
@@ -107,22 +120,14 @@ object WordStream {
 
   }
 
-  private def nextChunk(flow: Flow, dropSpaces: Boolean): (Chunk, Flow) = {
-    def isSpace: Element => Boolean = {
-      case Character(char, _) => char === ' '
-      case _ => false
+  private def nextChunk(flow: Flow): (Chunk, Flow) = {
+    val (content, rest) = calcNextChunk(Nil, flow)
+
+    val space: Option[Character] = rest.headOption.collect {
+      case c@Character(' ', _) => c
     }
 
-    val space: Option[Character] =
-      if (dropSpaces) None
-      else flow.headOption.collect {
-        case c@Character(' ', _) => c
-      }
-
-    val afterSpaces = flow.dropWhile_(isSpace)
-
-    val (content, rest) = calcNextChunk(Nil, afterSpaces)
-    (Chunk(space, content), rest)
+    (Chunk(content, space), rest.dropSpaces)
   }
 
   @tailrec

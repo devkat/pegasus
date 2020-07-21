@@ -1,6 +1,6 @@
 package devkat.pegasus
 
-import devkat.pegasus.model.sequential.Character
+import devkat.pegasus.model.sequential.{Character, Flow}
 
 package object layout {
 
@@ -13,5 +13,13 @@ package object layout {
   final case class Glyph(override val box: Box,
                          char: Character,
                          hidden: Boolean) extends LineElement(box)
+
+  implicit class FlowSyntax(val flow: Flow) extends AnyVal {
+    def dropSpaces: Flow =
+      flow.dropWhile {
+        case Character(' ', _) => true
+        case _ => false
+      }
+  }
 
 }
