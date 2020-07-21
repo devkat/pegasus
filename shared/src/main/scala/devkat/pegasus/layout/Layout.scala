@@ -71,14 +71,14 @@ object Layout {
     paraStyle: ParagraphStyle): LayoutRW[F, List[Line]] = {
     val rest = if (x === 0) flow.dropSpaces else flow
     rest match {
-      case Nil => pure(if (elemAcc.isEmpty) lineAcc else lineAcc :+ mkLine(x, y, elemAcc))
+      case Nil => pure(if (elemAcc.isEmpty) lineAcc else lineAcc :+ mkLine(x, y, elemAcc, paraStyle))
       case nonEmpty =>
         for {
           chunkOption <- layoutNextChunk[F](nonEmpty, x, maxWidth, paraStyle)
           result <- chunkOption match {
             case None =>
               layoutLines2[F](
-                lineAcc :+ mkLine(x, y, elemAcc),
+                lineAcc :+ mkLine(x, y, elemAcc, paraStyle),
                 List.empty[LineElement],
                 rest,
                 0.0,
@@ -101,8 +101,8 @@ object Layout {
     }
   }
 
-  private def mkLine(x: Double, y: Double, elems: List[LineElement]): Line =
-    Line(Box(x, y, elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(0), 20), elems)
+  private def mkLine(x: Double, y: Double, elems: List[LineElement], style: ParagraphStyle): Line =
+    Line(Box(x, y, elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(0), 20), elems, style)
 
   private def createGlyph[
     F[_] : Monad

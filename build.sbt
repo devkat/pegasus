@@ -47,8 +47,10 @@ lazy val client = (project in file("client"))
     //emitSourceMaps := true,
 
     libraryDependencies ++= Seq(
-      "io.suzaku" %%% "diode" % "1.1.10",
-      "com.lihaoyi" %%% "scalatags" % "0.9.1"
+      "io.suzaku" %%% "diode-react" % "1.1.11",
+      //"com.lihaoyi" %%% "scalatags" % "0.9.1",
+      "com.github.japgolly.scalajs-react" %%% "extra" % "1.7.3",
+      //"com.github.littlenag" %%% "scalajs-react-bootstrap" % "0.0.1-SNAPSHOT"
     )
 
   )

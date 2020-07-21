@@ -5,61 +5,86 @@ import cats.implicits._
 import devkat.pegasus.layout.{Glyph, Layout, LayoutEnv}
 import devkat.pegasus.model.CharacterStyle
 import devkat.pegasus.model.sequential.Flow
-import diode.ModelRO
-import org.scalajs.dom.svg.{G, TSpan}
-import scalatags.JsDom
-import scalatags.JsDom.all._
-import scalatags.JsDom.svgAttrs.{x, y, fill}
-import scalatags.JsDom.svgTags.{g, text, tspan}
+import diode.react.ModelProxy
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.{TagOf, VdomElement}
+import japgolly.scalajs.react.vdom.all._
+import japgolly.scalajs.react.vdom.all.svg.{`class` => _, fontFamily => _, fontSize => _, fontWeight => _, svg => _, _}
+import japgolly.scalajs.react.{BackendScope, ScalaComponent}
+import org.scalajs.dom.svg.TSpan
 
 object FlowView {
 
   private val w = 600
   private val hiddenCharactersColor = "#999999"
 
-  def render(flow: ModelRO[Flow], env: LayoutEnv): JsDom.TypedTag[G] = {
-    val (log, _, lines) = Layout[Id](flow.value, w).run(env, ())
-    log.foreach(println) // FIXME impure
-    g(
-      lines.map { line =>
+  final case class Props(proxy: ModelProxy[Flow],
+                         env: LayoutEnv)
 
-        val (tspans, elems, style) = line.elements.foldLeft((
-          List.empty[JsDom.TypedTag[TSpan]],
-          List.empty[Char],
-          CharacterStyle.empty
-        )) { case ((tspans, chars, style), Glyph(_, c, hidden)) =>
-          val overrideStyle = if (hidden) c.style.copy(color = Some(hiddenCharactersColor)) else c.style
-          if (overrideStyle === style)
-            (tspans, chars :+ c.char, style)
-          else
-            (tspans :+ mkTspan(style, chars), List(c.char), overrideStyle)
+  type State = Unit
+
+  class Backend($: BackendScope[Props, State]) {
+
+    def render(p: Props, s: State): VdomElement = {
+      val flow = p.proxy.value
+      val (log, _, lines) = Layout[Id](flow, w).run(p.env, ())
+      log.foreach(println) // FIXME impure
+      svg.svg(
+        `class` := "pegasus",
+        lines.toTagMod { line =>
+          val (tspans, elems, style) = line.elements.foldLeft((
+            List.empty[TagOf[TSpan]],
+            List.empty[Char],
+            CharacterStyle.empty
+          )) { case ((tspans, chars, style), Glyph(_, c, hidden)) =>
+            val overrideStyle = if (hidden) c.style.copy(color = Some(hiddenCharactersColor)) else c.style
+            if (overrideStyle === style)
+              (tspans, chars :+ c.char, style)
+            else
+              (tspans :+ mkTspan(style, chars), List(c.char), overrideStyle)
+          }
+
+          val allTspans =
+            if (elems.isEmpty) tspans
+            else tspans :+ mkTspan(style, elems)
+
+          text(
+            x := line.elements.map(_.box.x.svgString).mkString(" "),
+            y := line.box.y,
+            line.style.fontFamily.whenDefined(fontFamily := _),
+            line.style.fontStyle.whenDefined(fontStyle := _),
+            line.style.fontSize.whenDefined(fontSize := _.toString),
+            line.style.fontWeight.whenDefined(fontWeight := _.toString),
+            line.style.color.whenDefined(fill := _),
+            allTspans.toTagMod
+          )
         }
+      )
+    }
 
-        val allTspans =
-          if (elems.isEmpty) tspans
-          else tspans :+ mkTspan(style, elems)
+    private def mkTspan(style: CharacterStyle, chars: List[Char]) =
+      tspan(
+        style.fontFamily.whenDefined(fontFamily := _),
+        style.fontStyle.whenDefined(fontStyle := _),
+        style.fontSize.whenDefined(fontSize := _.toString),
+        style.fontWeight.whenDefined(fontWeight := _.toString),
+        style.color.whenDefined(fill := _),
+        chars.mkString
+      )
 
-        text(
-          x := line.elements.map(_.box.x.svgString).mkString(" "),
-          y := line.box.y,
-          SeqFrag(allTspans)
-        )
-      }
-    )
   }
 
-  private def mkTspan(style: CharacterStyle, chars: List[Char]): JsDom.TypedTag[TSpan] =
-    tspan(
-      style.fontFamily.map(fontFamily := _),
-      style.fontStyle.map(fontStyle := _),
-      style.fontSize.map(fontSize := _),
-      style.fontWeight.map(fontWeight := _),
-      style.color.map(fill := _),
-      chars.mkString
-    )
-
-  implicit class DoubleSyntax(val d: Double) extends AnyVal {
+  private implicit class DoubleSyntax(val d: Double) extends AnyVal {
     def svgString: String = f"$d%.3f"
   }
+
+  private lazy val component =
+    ScalaComponent
+      .builder[Props]("StatusBar")
+      .renderBackend[Backend]
+      .build
+
+  def apply(proxy: ModelProxy[Flow], env: LayoutEnv): Unmounted[Props, State, Backend] =
+    component(Props(proxy, env))
 
 }

@@ -10,13 +10,14 @@ import devkat.pegasus.model.sequential.{Character, Flow}
 import diode._
 import diode.data.Pot
 import diode.data.PotState._
+import diode.react.ReactConnector
 import org.scalajs.dom.ext.Ajax
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import io.circe.parser._
 
-object AppCircuit extends Circuit[EditorModel] {
+object AppCircuit extends Circuit[EditorModel] with ReactConnector[EditorModel] {
 
   override def initialModel: EditorModel = {
     EditorModel(
