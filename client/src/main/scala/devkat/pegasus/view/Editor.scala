@@ -19,8 +19,13 @@ object Editor {
   class Backend($: BackendScope[Props, State]) {
 
     def handleKeyPress(dispatch: Action => Callback)
-                      (e: ReactKeyboardEventFromInput): Callback =
-      Callback(e.target.value = "") >> dispatch(Insert(e.keyCode.toChar))
+                      (e: ReactKeyboardEventFromInput): Callback = {
+      def clb = Callback(e.target.value = "")
+      e.key.toList match {
+        case c :: _ => clb >> dispatch(Insert(c))
+        case Nil => clb
+      }
+    }
 
     def render(p: Props, s: State): VdomElement = {
       val model = p.proxy.value
@@ -46,7 +51,7 @@ object Editor {
                   onKeyPress ==> handleKeyPress(p.proxy.dispatchCB)
                 )
               ),
-              FlowView(p.proxy.zoom(_.flow), layoutEnv),
+              p.proxy.connect(_.flow).apply(p => FlowView(p, layoutEnv)),
               div(
                 fonts.fonts
                   .sortBy(f => f.family.value -> f.style.value)

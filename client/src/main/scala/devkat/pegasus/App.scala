@@ -21,6 +21,12 @@ object App {
       lazy val editorRoute: Rule =
         staticRoute("#/", ()) ~> renderR(router => connection(p => Editor(p)))
 
+      /*
+      val editor = AppCircuit.wrap(m => m)(m => Editor(m))
+      lazy val editorRoute: Rule =
+        staticRoute("#/", ()) ~> renderR(_ => editor)
+       */
+
       editorRoute.notFound(redirectToPage(())(SetRouteVia.HistoryReplace))
     }
 

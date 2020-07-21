@@ -9,7 +9,7 @@ lazy val commonSettings = Seq(
   scalacOptions ++= Seq(
     "-language:higherKinds"
   ),
-  wartremoverErrors ++= Warts.allBut(Wart.Any, Wart.Nothing, Wart.ToString)
+  wartremoverErrors ++= Warts.allBut(Wart.Any, Wart.Nothing, Wart.ToString, Wart.NonUnitStatements)
 )
 
 lazy val shared = crossProject(JSPlatform, JVMPlatform)
@@ -71,4 +71,4 @@ lazy val server = (project in file("server"))
       "org.http4s" %% "http4s-circe"
     ).map(_ % "1.0.0-M3")
   )
-  .dependsOn(shared.jvm)
+  .dependsOn(shared.jvm % "compile->compile;test->test")

@@ -2,7 +2,7 @@ package devkat.pegasus.layout
 
 import cats.implicits._
 import devkat.pegasus.hyphenation.{HyphenationSpec, Hyphenator}
-import devkat.pegasus.model.sequential.{Character, Element, Flow, InlineImage, Paragraph}
+import devkat.pegasus.model.sequential.{Character, Flow, InlineImage, Paragraph}
 
 import scala.annotation.tailrec
 import scala.util.matching.Regex

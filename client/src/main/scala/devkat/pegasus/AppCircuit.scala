@@ -1,7 +1,7 @@
 package devkat.pegasus
 
 import devkat.pegasus.Actions._
-import devkat.pegasus.examples.Lipsum
+import devkat.pegasus.examples.Examples
 import devkat.pegasus.fonts.Fonts
 import devkat.pegasus.hyphenation.HyphenationSpec
 import devkat.pegasus.model.CharacterStyle
@@ -21,7 +21,7 @@ object AppCircuit extends Circuit[EditorModel] with ReactConnector[EditorModel] 
 
   override def initialModel: EditorModel = {
     EditorModel(
-      flow = Flow.fromNestedFlow(Lipsum.flowFromString(Lipsum.lipsum)),
+      flow = Flow.fromNestedFlow(Examples.flowFromString(Examples.dummyText)),
       selection = None,
       fonts = Pot.empty,
       hyphenationSpec = Pot.empty,

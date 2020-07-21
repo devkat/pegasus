@@ -1,6 +1,6 @@
 package devkat.pegasus.view
 
-import cats.Id
+import cats.{Eval, Id}
 import cats.implicits._
 import devkat.pegasus.layout.{Glyph, Layout, LayoutEnv}
 import devkat.pegasus.model.CharacterStyle
@@ -27,7 +27,7 @@ object FlowView {
 
     def render(p: Props, s: State): VdomElement = {
       val flow = p.proxy.value
-      val (log, _, lines) = Layout[Id](flow, w).run(p.env, ())
+      val (log, _, lines) = Layout[Eval](flow, w).run(p.env, ()).value
       log.foreach(println) // FIXME impure
       svg.svg(
         `class` := "pegasus",

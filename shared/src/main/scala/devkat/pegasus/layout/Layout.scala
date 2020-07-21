@@ -144,7 +144,10 @@ object Layout {
         .traverse { case (chunk, space, rest) => layoutChunk[F](chunk, space, x, paraStyle).map((_, rest)) }
     } yield
       layoutChunks
-        .find { case ((list@init :+ e, _), _) => e.box.x + e.box.w < maxWidth }
+        .find {
+          case ((_ :+ e, _), _) => e.box.x + e.box.w < maxWidth
+          case _ => false
+        }
         .map { case ((elems, space), rest) => (elems ::: space.toList, rest) }
 
   private def layoutChunk[
