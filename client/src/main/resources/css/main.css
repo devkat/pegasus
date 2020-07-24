@@ -1,12 +1,17 @@
 .pegasus {
-
   width: 600px;
   height: 600px;
   border: solid 1px #EEEEEE;
   overflow: visible;
-
 }
 
 .footer {
   background-color: #f5f5f5;
+}
+
+svg text{
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
