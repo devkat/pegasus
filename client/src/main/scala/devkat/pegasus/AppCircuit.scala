@@ -5,7 +5,7 @@ import devkat.pegasus.examples.Examples
 import devkat.pegasus.fonts.Fonts
 import devkat.pegasus.hyphenation.HyphenationSpec
 import devkat.pegasus.model.CharacterStyle
-import devkat.pegasus.model.editor.EditorModel
+import devkat.pegasus.model.editor.{EditorModel, RootModel, Selection}
 import devkat.pegasus.model.sequential.{Character, Flow}
 import diode._
 import diode.data.Pot
@@ -17,28 +17,40 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import io.circe.parser._
 
-object AppCircuit extends Circuit[EditorModel] with ReactConnector[EditorModel] {
+object AppCircuit extends Circuit[RootModel] with ReactConnector[RootModel] {
 
-  override def initialModel: EditorModel = {
-    EditorModel(
-      flow = Flow.fromNestedFlow(Examples.flowFromString(Examples.dummyText)),
-      selection = None,
-      fonts = Pot.empty,
-      hyphenationSpec = Pot.empty,
-      status = None
+  override def initialModel: RootModel = {
+    val flow = Flow.fromNestedFlow(Examples.flowFromString(Examples.dummyText))
+    RootModel(
+      EditorModel(
+        flow = flow,
+        selection = Some(Selection(flow.length, flow.length)),
+        fonts = Pot.empty,
+        hyphenationSpec = Pot.empty,
+        status = None
+      )
     )
   }
 
-  private val flowHandler: ActionHandler[EditorModel, Flow] =
-    new ActionHandler(zoomTo(_.flow)) {
+  private val flowHandler: ActionHandler[RootModel, EditorModel] =
+    new ActionHandler(zoomTo(_.editor)) {
       override def handle = {
-        case ReplaceFlow(flow) => updated(flow)
-        case Insert(c) => updated(value :+ Character(c, CharacterStyle.empty))
+
+        case ReplaceFlow(flow) =>
+          updated(value.copy(flow = flow, selection = Some(Selection(flow.length, flow.length))))
+
+        case Insert(c) =>
+          updated(value.copy(flow = value.flow :+ Character(c, CharacterStyle.empty)))
+
+        case SetCaret(x, y) =>
+          println(s"Caret: ${x.toString} ${y.toString}")
+          updated(value)
+
       }
     }
 
-  private val fontHandler: ActionHandler[EditorModel, Pot[Fonts]] =
-    new ActionHandler(zoomTo(_.fonts)) {
+  private val fontHandler: ActionHandler[RootModel, Pot[Fonts]] =
+    new ActionHandler(zoomTo(_.editor.fonts)) {
       override def handle = {
         case action: LoadFonts =>
           val updateEffect = action.effect(loadFonts)(identity)
@@ -61,8 +73,8 @@ object AppCircuit extends Circuit[EditorModel] with ReactConnector[EditorModel] 
       }
     }
 
-  private val hyphenationHandler: ActionHandler[EditorModel, Pot[HyphenationSpec]] =
-    new ActionHandler(zoomTo(_.hyphenationSpec)) {
+  private val hyphenationHandler: ActionHandler[RootModel, Pot[HyphenationSpec]] =
+    new ActionHandler(zoomTo(_.editor.hyphenationSpec)) {
       override def handle = {
         case action: LoadHyphenationSpec =>
           val updateEffect = action.effect(loadHyphenationSpec)(identity)

@@ -14,15 +14,15 @@ object Layout {
   def apply[
     F[_] : Monad
   ](flow: Flow, width: Double): LayoutRW[F, List[Line]] =
-    layout[F](flow, width, 0)
+    layout[F](flow, 0, width, 0)
 
   def layout[
     F[_] : Monad
-  ](flow: Flow, width: Double, y: Double): LayoutRW[F, List[Line]] =
+  ](flow: Flow, index: Int, width: Double, y: Double): LayoutRW[F, List[Line]] =
     flow match {
       case Nil => pure(Nil)
       case element :: tail => element match {
-        case Paragraph(style) => layoutParagraph(style, tail, width, y)
+        case Paragraph(style) => layoutParagraph(style, tail, index + 1, width, y)
         case other =>
           tell[F, LayoutEnv, List[String], Unit](List("Invalid element in paragraph position: " + other.toString))
             .as(Nil)
@@ -32,21 +32,22 @@ object Layout {
   def layoutParagraph[
     F[_] : Monad
   ](style: ParagraphStyle,
-    tail: Flow,
+    flow: Flow,
+    index: Int,
     maxWidth: Double,
     y: Double): LayoutRW[F, List[Line]] = {
 
-    val paraChars = tail.takeWhile {
+    val paraChars = flow.takeWhile {
       case _: Character => true
       case _ => false
     }
 
-    layoutLines[F](paraChars, style, y, maxWidth)
+    layoutLines[F](paraChars, index, style, y, maxWidth)
       .flatMap { lines =>
         val bottom = lines.lastOption.map(l => l.box.y + l.box.h).getOrElse(y)
         val next: LayoutRW[F, List[Line]] =
-          if (paraChars.size === tail.size) pure(List.empty)
-          else layout(tail.drop(paraChars.size), maxWidth, bottom)
+          if (paraChars.size === flow.size) pure(List.empty)
+          else layout(flow.drop(paraChars.size), index + paraChars.size, maxWidth, bottom)
         next.map(lines ::: _)
       }
   }
@@ -54,10 +55,11 @@ object Layout {
   def layoutLines[
     F[_] : Monad
   ](flow: Flow,
+    index: Int,
     paraStyle: ParagraphStyle,
     y: Double,
     maxWidth: Double): LayoutRW[F, List[Line]] =
-    layoutLines2[F](Nil, Nil, flow, 0, y + 20, maxWidth, paraStyle)
+    layoutLines2[F](Nil, Nil, flow, index, 0, y + 20, maxWidth, paraStyle)
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   private def layoutLines2[
@@ -65,22 +67,23 @@ object Layout {
   ](lineAcc: List[Line],
     elemAcc: List[LineElement],
     flow: Flow,
+    index: Int,
     x: Double,
     y: Double,
     maxWidth: Double,
     paraStyle: ParagraphStyle): LayoutRW[F, List[Line]] = {
-    val rest = if (x === 0) flow.dropSpaces else flow
-    rest match {
+    flow match {
       case Nil => pure(if (elemAcc.isEmpty) lineAcc else lineAcc :+ mkLine(x, y, elemAcc, paraStyle))
       case nonEmpty =>
         for {
-          chunkOption <- layoutNextChunk[F](nonEmpty, x, maxWidth, paraStyle)
+          chunkOption <- layoutNextChunk[F](nonEmpty, index, x, maxWidth, paraStyle)
           result <- chunkOption match {
             case None =>
               layoutLines2[F](
                 lineAcc :+ mkLine(x, y, elemAcc, paraStyle),
                 List.empty[LineElement],
-                rest,
+                flow,
+                index,
                 0.0,
                 y + 20,
                 maxWidth,
@@ -91,6 +94,7 @@ object Layout {
                 lineAcc,
                 elemAcc ::: elems,
                 chunkRest,
+                index + elems.length,
                 elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(x),
                 y,
                 maxWidth,
@@ -106,19 +110,23 @@ object Layout {
 
   private def createGlyph[
     F[_] : Monad
-  ](paraStyle: ParagraphStyle, prev: Option[Character], c: Character, x: Double): LayoutRW[F, Option[Glyph]] =
+  ](paraStyle: ParagraphStyle,
+    prev: Option[Character],
+    c: Character,
+    x: Double,
+    index: Int): LayoutRW[F, Option[Glyph]] =
     for {
       kernAndWidthE <- Glyphs.kerningAndWidth[F](c, prev, paraStyle)
       kernAndWidthO <- EitherT
         .fromEither[LayoutRW[F, *]](kernAndWidthE)
         .map(Some(_))
         .valueOrF(error => log[F](error).as(Option.empty[(Double, Double)]))
-      glyph <- kernAndWidthO.traverse { case (k, w) => mkGlyph[F](Box(x + k, 0, w, 0), c) }
+      glyph <- kernAndWidthO.traverse { case (k, w) => mkGlyph[F](index, Box(x + k, 0, w, 0), c) }
     } yield glyph
 
   private def mkGlyph[
     F[_] : Monad
-  ](box: Box, c: Character): LayoutRW[F, Glyph] =
+  ](index: Int, box: Box, c: Character): LayoutRW[F, Glyph] =
     ask[F, LayoutEnv, List[String], Unit].map { env =>
       val (char, hidden) =
         if (env.settings.showHiddenCharacters)
@@ -128,12 +136,13 @@ object Layout {
           }
         else
           (c.char, false)
-      Glyph(box, c.copy(char = char), hidden)
+      Glyph(index, box, c.copy(char = char), hidden)
     }
 
   private def layoutNextChunk[
     F[_] : Monad
   ](flow: Flow,
+    index: Int,
     x: Double,
     maxWidth: Double,
     paraStyle: ParagraphStyle): LayoutRW[F, Option[(List[LineElement], Flow)]] =
@@ -141,9 +150,12 @@ object Layout {
       env <- ask[F, LayoutEnv, List[String], Unit]
       layoutChunks <- WordStream
         .apply(flow, env.hyphenationSpec)
-        .traverse { case (chunk, space, rest) => layoutChunk[F](chunk, space, x, paraStyle).map((_, rest)) }
+        .traverse { case (chunk, spaces, rest) =>
+          layoutChunk[F](chunk, index, spaces, x, paraStyle).map((_, rest))
+        }
     } yield
       layoutChunks
+        .map(c => {println(c._1._1.size.toString); c})
         .find {
           case ((_ :+ e, _), _) => e.box.x + e.box.w < maxWidth
           case _ => false
@@ -153,33 +165,40 @@ object Layout {
   private def layoutChunk[
     F[_] : Monad
   ](flow: List[Element],
-    space: Option[Character],
+    index: Int,
+    spaces: List[Character],
     startX: Double,
-    paraStyle: ParagraphStyle): LayoutRW[F, (List[LineElement], Option[LineElement])] =
+    paraStyle: ParagraphStyle): LayoutRW[F, (List[LineElement], List[LineElement])] =
     flow
       .foldLeftM((
         List.empty[LineElement], // accumulated line elements
-        Option.empty[Character] // previous character (for kerning)
-      )) { case ((elems, prev), e) =>
+        Option.empty[Character], // previous character (for kerning)
+        index
+      )) { case ((elems, prev, index), e) =>
         val x = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(startX)
         for {
           layoutElementOption <- e match {
             case c: Character =>
-              createGlyph[F](paraStyle, prev, c, x)
+              createGlyph[F](paraStyle, prev, c, x, index)
             case other =>
               log[F]("Unsupported element: " + other.toString).as(None)
           }
         } yield
           layoutElementOption.fold(
-            (elems, Option.empty[Character])
+            (elems, Option.empty[Character], index + 1)
           )(
-            glyph => (elems :+ glyph, Some(glyph.char))
+            glyph => (elems :+ glyph, Some(glyph.char), index + 1)
           )
       }
-      .map { case (elems, _) => elems }
+      .map { case (elems, _, _) => elems }
       .flatMap { elems =>
         val x = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(startX)
-        space.flatTraverse(createGlyph[F](paraStyle, None, _, x)).map((elems, _))
+        spaces
+          .zipWithIndex
+          .flatTraverse { case (space, index) =>
+            createGlyph[F](paraStyle, None, space, x, elems.size + index).map(_.toList)
+          }
+          .map((elems, _))
       }
 
   private implicit final class CharSyntax(val c: Char) {

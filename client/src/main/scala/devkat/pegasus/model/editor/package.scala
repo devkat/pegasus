@@ -7,6 +7,8 @@ import diode.data.Pot
 
 package object editor {
 
+  final case class RootModel(editor: EditorModel)
+
   final case class EditorModel(flow: Flow,
                                selection: Option[Selection],
                                fonts: Pot[Fonts],

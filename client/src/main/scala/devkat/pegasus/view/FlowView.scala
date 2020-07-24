@@ -2,15 +2,18 @@ package devkat.pegasus.view
 
 import cats.{Eval, Id}
 import cats.implicits._
+import devkat.pegasus.Actions.SetCaret
 import devkat.pegasus.layout.{Glyph, Layout, LayoutEnv}
 import devkat.pegasus.model.CharacterStyle
 import devkat.pegasus.model.sequential.Flow
+import diode.Action
 import diode.react.ModelProxy
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.{TagOf, VdomElement}
 import japgolly.scalajs.react.vdom.all._
 import japgolly.scalajs.react.vdom.all.svg.{`class` => _, fontFamily => _, fontSize => _, fontWeight => _, svg => _, _}
-import japgolly.scalajs.react.{BackendScope, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactMouseEvent, ScalaComponent}
+import org.scalajs.dom.Element
 import org.scalajs.dom.svg.TSpan
 
 object FlowView {
@@ -25,18 +28,32 @@ object FlowView {
 
   class Backend($: BackendScope[Props, State]) {
 
+    def handleClick(dispatch: Action => Callback)
+                   (e: ReactMouseEvent): Callback = {
+      e.currentTarget match {
+        case target: Element =>
+          val r = target.getBoundingClientRect()
+          dispatch(SetCaret(e.clientX - r.left, e.clientY - r.top))
+        case _ =>
+          Callback(())
+      }
+    }
+
     def render(p: Props, s: State): VdomElement = {
       val flow = p.proxy.value
       val (log, _, lines) = Layout[Eval](flow, w).run(p.env, ()).value
       log.foreach(println) // FIXME impure
       svg.svg(
         `class` := "pegasus",
+
+        onClick ==> handleClick(p.proxy.dispatchCB),
+
         lines.toTagMod { line =>
           val (tspans, elems, style) = line.elements.foldLeft((
             List.empty[TagOf[TSpan]],
             List.empty[Char],
             CharacterStyle.empty
-          )) { case ((tspans, chars, style), Glyph(_, c, hidden)) =>
+          )) { case ((tspans, chars, style), Glyph(_, _, c, hidden)) =>
             val overrideStyle = if (hidden) c.style.copy(color = Some(hiddenCharactersColor)) else c.style
             if (overrideStyle === style)
               (tspans, chars :+ c.char, style)

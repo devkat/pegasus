@@ -16,7 +16,7 @@ object App {
     RouterConfigDsl[Unit].buildConfig { dsl =>
       import dsl._
 
-      val connection = AppCircuit.connect(m => m)
+      val connection = AppCircuit.connect(_.editor)
 
       lazy val editorRoute: Rule =
         staticRoute("#/", ()) ~> renderR(router => connection(p => Editor(p)))

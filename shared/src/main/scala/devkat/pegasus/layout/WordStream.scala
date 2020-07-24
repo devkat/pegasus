@@ -21,21 +21,28 @@ object WordStream {
   // 2. (transco-, ding foo bar baz)   List(trans)
   // 3. (trans-, coding foo bar baz)   List()
 
-  private type Result = (Flow, Option[Character], Flow)
+  private type Result = (Flow, List[Character], Flow)
 
   def apply(flow: Flow, spec: HyphenationSpec): LazyList[Result] = {
+
+    /*
+    if (flow.headOption.exists {
+      case Character(' ', _) => true
+      case _ => false
+    }) sys.error("Programming error; flow starts with space")
+     */
 
     val (chunk, rest) = nextChunk(flow)
 
     chunk.content match {
 
       case ChunkContent.Image(img) =>
-        LazyList((List(img), chunk.space, rest))
+        LazyList((List(img), chunk.spaces, rest))
 
       case ChunkContent.Text(chars) =>
 
         val prefix = chars.takeWhile(c => !isLetter.matches(c.char.toString))
-        val noHyphenationResult = LazyList((chars, chunk.space, rest))
+        val noHyphenationResult = LazyList((chars, chunk.spaces, rest))
 
         if (prefix.length === chars.length)
           noHyphenationResult
@@ -67,8 +74,8 @@ object WordStream {
                 (
                   (
                     appendHyphen(output),
-                    None,
-                    outputRest ::: chunk.space.toList ::: rest
+                    Nil,
+                    outputRest ::: chunk.spaces ::: rest
                   ),
                   State.Syllables(remainingSyllables)
                 )
@@ -78,7 +85,7 @@ object WordStream {
             LazyList.unfold[Result, State](State.Initial) {
 
               case State.Initial =>
-                Some((chars, chunk.space, rest), State.FullWord)
+                Some((chars, chunk.spaces, rest), State.FullWord)
 
               case State.FullWord =>
 
@@ -86,7 +93,7 @@ object WordStream {
 
                   case Nil => sys.error("Programming error")
 
-                  case word :: Nil => Some((chars, chunk.space, rest), State.Syllables(Nil))
+                  case word :: Nil => Some((chars, chunk.spaces, rest), State.Syllables(Nil))
 
                   case syllables@h :: (m :+ t) =>
                     val remainingSyllables = (prefix.map(_.char).mkString + h) :: m
@@ -108,7 +115,7 @@ object WordStream {
 
   }
 
-  private final case class Chunk(content: ChunkContent, space: Option[Character])
+  private final case class Chunk(content: ChunkContent, spaces: List[Character])
 
   private sealed trait ChunkContent
 
@@ -121,13 +128,17 @@ object WordStream {
   }
 
   private def nextChunk(flow: Flow): (Chunk, Flow) = {
+
     val (content, rest) = calcNextChunk(Nil, flow)
 
-    val space: Option[Character] = rest.headOption.collect {
-      case c@Character(' ', _) => c
-    }
+    val spaces: List[Character] = rest
+      .takeWhile {
+        case Character(' ', _) => true
+        case _ => false
+      }
+      .collect { case c@Character(' ', _) => c }
 
-    (Chunk(content, space), rest.dropSpaces)
+    (Chunk(content, spaces), rest.drop(spaces.length))
   }
 
   @tailrec

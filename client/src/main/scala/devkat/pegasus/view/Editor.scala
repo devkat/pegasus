@@ -19,13 +19,11 @@ object Editor {
   class Backend($: BackendScope[Props, State]) {
 
     def handleKeyPress(dispatch: Action => Callback)
-                      (e: ReactKeyboardEventFromInput): Callback = {
-      def clb = Callback(e.target.value = "")
+                      (e: ReactKeyboardEventFromInput): Callback =
       e.key.toList match {
-        case c :: _ => clb >> dispatch(Insert(c))
-        case Nil => clb
+        case c :: _ => dispatch(Insert(c))
+        case Nil => Callback(())
       }
-    }
 
     def render(p: Props, s: State): VdomElement = {
       val model = p.proxy.value

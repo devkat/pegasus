@@ -9,18 +9,11 @@ package object layout {
 
   final case class Line(box: Box, elements: List[LineElement], style: ParagraphStyle)
 
-  sealed abstract class LineElement(val box: Box)
+  sealed abstract class LineElement(val index: Int, val box: Box)
 
-  final case class Glyph(override val box: Box,
+  final case class Glyph(override val index: Int,
+                         override val box: Box,
                          char: Character,
-                         hidden: Boolean) extends LineElement(box)
-
-  implicit class FlowSyntax(val flow: Flow) extends AnyVal {
-    def dropSpaces: Flow =
-      flow.dropWhile {
-        case Character(' ', _) => true
-        case _ => false
-      }
-  }
+                         hidden: Boolean) extends LineElement(index, box)
 
 }
