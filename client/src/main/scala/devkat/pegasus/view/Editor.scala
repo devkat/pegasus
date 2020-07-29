@@ -1,9 +1,9 @@
 package devkat.pegasus.view
 
 import cats.implicits._
-import devkat.pegasus.Actions.Insert
+import devkat.pegasus.Actions._
 import devkat.pegasus.layout.{LayoutEnv, LayoutSettings}
-import devkat.pegasus.model.editor.EditorModel
+import devkat.pegasus.model.editor.{EditorModel, Selection}
 import diode.Action
 import diode.react.ModelProxy
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -18,12 +18,24 @@ object Editor {
 
   class Backend($: BackendScope[Props, State]) {
 
-    def handleKeyPress(dispatch: Action => Callback)
-                      (e: ReactKeyboardEventFromInput): Callback =
-      e.key.toList match {
-        case c :: _ => dispatch(Insert(c))
-        case Nil => Callback(())
+    def handleKeyDown(dispatch: Action => Callback,
+                      selection: Option[Selection])
+                     (e: ReactKeyboardEventFromInput): Callback = {
+      //println(e.keyCode.toString)
+      //println(e.key.toString)
+      e.keyCode match {
+        case 8 =>
+          selection
+            .filter(_.anchor > 0)
+            .fold(Callback(()))(s => dispatch(Delete(s.anchor - 1, s.anchor)))
+        case _ =>
+          e.key.toList match {
+            case c :: _ => dispatch(Insert(c))
+            case Nil => Callback(())
+          }
       }
+
+    }
 
     def render(p: Props, s: State): VdomElement = {
       val model = p.proxy.value
@@ -46,10 +58,10 @@ object Editor {
               div(
                 input(
                   `type` := "text",
-                  onKeyPress ==> handleKeyPress(p.proxy.dispatchCB)
+                  onKeyDown ==> handleKeyDown(p.proxy.dispatchCB, model.selection)
                 )
               ),
-              p.proxy.connect(_.flow).apply(p => FlowView(p, layoutEnv)),
+              p.proxy.connect(identity).apply(p => FlowView(p, layoutEnv)),
               div(
                 fonts.fonts
                   .sortBy(f => f.family.value -> f.style.value)

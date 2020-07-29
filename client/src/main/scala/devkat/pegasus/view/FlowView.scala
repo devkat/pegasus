@@ -1,17 +1,18 @@
 package devkat.pegasus.view
 
-import cats.{Eval, Id}
+import cats.Eval
 import cats.implicits._
 import devkat.pegasus.Actions.SetCaret
-import devkat.pegasus.layout.{Glyph, Layout, LayoutEnv}
+import devkat.pegasus.layout._
 import devkat.pegasus.model.CharacterStyle
-import devkat.pegasus.model.sequential.Flow
+import devkat.pegasus.model.editor.EditorModel
+import devkat.pegasus.view.SelectionView._
 import diode.Action
 import diode.react.ModelProxy
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.vdom.{TagOf, VdomElement}
-import japgolly.scalajs.react.vdom.all._
 import japgolly.scalajs.react.vdom.all.svg.{`class` => _, fontFamily => _, fontSize => _, fontWeight => _, svg => _, _}
+import japgolly.scalajs.react.vdom.all.{color => _, height => _, width => _, _}
+import japgolly.scalajs.react.vdom.{TagOf, VdomElement}
 import japgolly.scalajs.react.{BackendScope, Callback, ReactMouseEvent, ScalaComponent}
 import org.scalajs.dom.Element
 import org.scalajs.dom.svg.TSpan
@@ -21,32 +22,86 @@ object FlowView {
   private val w = 600
   private val hiddenCharactersColor = "#999999"
 
-  final case class Props(proxy: ModelProxy[Flow],
+  final case class Props(proxy: ModelProxy[EditorModel],
                          env: LayoutEnv)
 
   type State = Unit
 
   class Backend($: BackendScope[Props, State]) {
 
-    def handleClick(dispatch: Action => Callback)
-                   (e: ReactMouseEvent): Callback = {
+    private def getIndex(layout: List[Line], x: Double, y: Double): Option[Int] = {
+
+      def halfX(e: LineElement) = e.box.x + e.box.w / 2
+
+      for {
+        line <- layout.find(line => line.box.y <= y && y <= line.box.y + line.box.h)
+        (first, last) <- (line.elements.headOption, line.elements.lastOption).tupled
+        result <-
+          if (x <= halfX(first)) Some(first)
+          else if (halfX(last) < x) Some(last)
+          else line.elements.sliding(2, 1).collectFirst {
+            case a :: b :: Nil if halfX(a) <= x && x < halfX(b) => b
+          }
+      } yield result.index
+    }
+
+    def handleClick(layout: List[Line], dispatch: Action => Callback)
+                   (e: ReactMouseEvent): Callback =
       e.currentTarget match {
         case target: Element =>
           val r = target.getBoundingClientRect()
-          dispatch(SetCaret(e.clientX - r.left, e.clientY - r.top))
+          val (x, y) = (e.clientX - r.left, e.clientY - r.top)
+          getIndex(layout, x, y).fold(Callback(()))(i => dispatch(SetCaret(i)))
         case _ =>
           Callback(())
       }
-    }
+
+    def handleMouseMove(layout: List[Line], dispatch: Action => Callback)
+                       (e: ReactMouseEvent): Callback =
+      e.currentTarget match {
+        case target: Element if e.button === 0 =>
+          val r = target.getBoundingClientRect()
+          val (x, y) = (e.clientX - r.left, e.clientY - r.top)
+          getIndex(layout, x, y).fold(Callback(()))(i => dispatch(SetCaret(i)))
+        case _ =>
+          Callback(())
+      }
 
     def render(p: Props, s: State): VdomElement = {
-      val flow = p.proxy.value
+      val flow = p.proxy.value.flow
+      val selection = p.proxy.value.selection
+
       val (log, _, lines) = Layout[Eval](flow, w).run(p.env, ()).value
-      log.foreach(println) // FIXME impure
+
       svg.svg(
         `class` := "pegasus",
 
-        onClick ==> handleClick(p.proxy.dispatchCB),
+        onClick ==> handleClick(lines, p.proxy.dispatchCB),
+        //onMouseMove ==> handleMouseMove(lines, p.proxy.dispatchCB),
+
+        selection
+          .flatMap(SelectionLayout(_, lines))
+          .toTagMod {
+            case Caret(box) =>
+              rect(
+                className := "caret",
+                x := box.x.toString,
+                y := box.y.toString,
+                width := box.w.toString,
+                height := box.h.toString,
+                stroke := "solid 1px black"
+              )
+            case Lines(lines) =>
+              lines.toTagMod(box =>
+                rect(
+                  x := box.x.toString,
+                  y := box.y.toString,
+                  width := box.w.toString,
+                  height := box.h.toString,
+                  color := "#EEEEEEE"
+                )
+              )
+          },
 
         lines.toTagMod { line =>
           val (tspans, elems, style) = line.elements.foldLeft((
@@ -67,7 +122,7 @@ object FlowView {
 
           text(
             x := line.elements.map(_.box.x.svgString).mkString(" "),
-            y := line.box.y,
+            y := line.box.y + line.box.h,
             line.style.fontFamily.whenDefined(fontFamily := _),
             line.style.fontStyle.whenDefined(fontStyle := _),
             line.style.fontSize.whenDefined(fontSize := _.toString),
@@ -101,7 +156,8 @@ object FlowView {
       .renderBackend[Backend]
       .build
 
-  def apply(proxy: ModelProxy[Flow], env: LayoutEnv): Unmounted[Props, State, Backend] =
+  def apply(proxy: ModelProxy[EditorModel],
+            env: LayoutEnv): Unmounted[Props, State, Backend] =
     component(Props(proxy, env))
 
 }

@@ -1,6 +1,6 @@
 package devkat.pegasus
 
-import devkat.pegasus.Actions._
+import devkat.pegasus.Actions.{Delete, _}
 import devkat.pegasus.examples.Examples
 import devkat.pegasus.fonts.Fonts
 import devkat.pegasus.hyphenation.HyphenationSpec
@@ -42,9 +42,14 @@ object AppCircuit extends Circuit[RootModel] with ReactConnector[RootModel] {
         case Insert(c) =>
           updated(value.copy(flow = value.flow :+ Character(c, CharacterStyle.empty)))
 
-        case SetCaret(x, y) =>
-          println(s"Caret: ${x.toString} ${y.toString}")
-          updated(value)
+        case Delete(start, end) =>
+          updated(value.copy(
+            flow = value.flow.take(start) ::: value.flow.drop(end),
+            selection = Some(Selection(start, start))
+          ))
+
+        case SetCaret(index) =>
+          updated(value.copy(selection = Some(Selection(index, index))))
 
       }
     }

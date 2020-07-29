@@ -1,7 +1,6 @@
 package devkat.pegasus.view
 
 import cats.implicits._
-import devkat.pegasus.layout
 import devkat.pegasus.layout.{Box, Line, LineElement}
 import devkat.pegasus.model.editor.Selection
 import devkat.pegasus.view.SelectionView.{Caret, Lines}
@@ -42,7 +41,7 @@ object SelectionLayout {
 
     if (selection.anchor === selection.focus)
       findElement(selection.anchor)
-        .map(_.box.copy(w = 0))
+        .map(_.box.copy(w = 1))
         .map(Caret.apply)
     else {
       val index1 = Math.min(selection.anchor, selection.focus)
@@ -52,7 +51,8 @@ object SelectionLayout {
           findLine(index1),
           findLine(index2),
         )
-        .mapN { case ((l1, i1), (l2, i2)) =>
+        .tupled
+        .flatMap { case ((l1, i1), (l2, i2)) =>
           Tuple2
             .apply(
               l1.elements.find(_.index === index1),
@@ -61,19 +61,15 @@ object SelectionLayout {
             .mapN { case (e1, e2) =>
               if (i1 === i2)
                 List(Box(e1.box.x, l1.box.y, e2.box.x + e2.box.w, l1.box.h))
-              else {
-                (List(Box(e1.box.x, l1.box.y, l1.box.x + l2.box.w - e1.box.x, l1.box.h)) ::
+              else
+                (Box(e1.box.x, l1.box.y, l1.box.x + l2.box.w - e1.box.x, l1.box.h) ::
                   layout.slice(i1, i2 - 1).map(_.box)) :+
-                  List(Box(e1.box.x, l1.box.y, l1.box.x + l2.box.w - e1.box.x, l1.box.h))
-              }
+                  Box(e1.box.x, l1.box.y, l1.box.x + l2.box.w - e1.box.x, l1.box.h)
             }
         }
         .map(Lines.apply)
     }
 
-
   }
-
-
 
 }

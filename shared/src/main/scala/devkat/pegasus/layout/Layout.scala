@@ -59,7 +59,7 @@ object Layout {
     paraStyle: ParagraphStyle,
     y: Double,
     maxWidth: Double): LayoutRW[F, List[Line]] =
-    layoutLines2[F](Nil, Nil, flow, index, 0, y + 20, maxWidth, paraStyle)
+    layoutLines2[F](Nil, Nil, flow, index, 0, y, maxWidth, paraStyle)
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   private def layoutLines2[
@@ -76,7 +76,7 @@ object Layout {
       case Nil => pure(if (elemAcc.isEmpty) lineAcc else lineAcc :+ mkLine(x, y, elemAcc, paraStyle))
       case nonEmpty =>
         for {
-          chunkOption <- layoutNextChunk[F](nonEmpty, index, x, maxWidth, paraStyle)
+          chunkOption <- layoutNextChunk[F](nonEmpty, index, x, y, maxWidth, paraStyle)
           result <- chunkOption match {
             case None =>
               layoutLines2[F](
@@ -114,6 +114,7 @@ object Layout {
     prev: Option[Character],
     c: Character,
     x: Double,
+    y: Double,
     index: Int): LayoutRW[F, Option[Glyph]] =
     for {
       kernAndWidthE <- Glyphs.kerningAndWidth[F](c, prev, paraStyle)
@@ -121,7 +122,7 @@ object Layout {
         .fromEither[LayoutRW[F, *]](kernAndWidthE)
         .map(Some(_))
         .valueOrF(error => log[F](error).as(Option.empty[(Double, Double)]))
-      glyph <- kernAndWidthO.traverse { case (k, w) => mkGlyph[F](index, Box(x + k, 0, w, 0), c) }
+      glyph <- kernAndWidthO.traverse { case (k, w) => mkGlyph[F](index, Box(x + k, y, w, 20), c) }
     } yield glyph
 
   private def mkGlyph[
@@ -144,6 +145,7 @@ object Layout {
   ](flow: Flow,
     index: Int,
     x: Double,
+    y: Double,
     maxWidth: Double,
     paraStyle: ParagraphStyle): LayoutRW[F, Option[(List[LineElement], Flow)]] =
     for {
@@ -151,16 +153,15 @@ object Layout {
       layoutChunks <- WordStream
         .apply(flow, env.hyphenationSpec)
         .traverse { case (chunk, spaces, rest) =>
-          layoutChunk[F](chunk, index, spaces, x, paraStyle).map((_, rest))
+          layoutChunk[F](chunk, index, spaces, x, y, paraStyle).map((_, rest))
         }
     } yield
       layoutChunks
-        .map(c => {println(c._1._1.size.toString); c})
         .find {
           case ((_ :+ e, _), _) => e.box.x + e.box.w < maxWidth
           case _ => false
         }
-        .map { case ((elems, space), rest) => (elems ::: space.toList, rest) }
+        .map { case ((elems, spaces), rest) => (elems ::: spaces, rest) }
 
   private def layoutChunk[
     F[_] : Monad
@@ -168,6 +169,7 @@ object Layout {
     index: Int,
     spaces: List[Character],
     startX: Double,
+    y: Double,
     paraStyle: ParagraphStyle): LayoutRW[F, (List[LineElement], List[LineElement])] =
     flow
       .foldLeftM((
@@ -179,7 +181,7 @@ object Layout {
         for {
           layoutElementOption <- e match {
             case c: Character =>
-              createGlyph[F](paraStyle, prev, c, x, index)
+              createGlyph[F](paraStyle, prev, c, x, y, index)
             case other =>
               log[F]("Unsupported element: " + other.toString).as(None)
           }
@@ -195,8 +197,8 @@ object Layout {
         val x = elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(startX)
         spaces
           .zipWithIndex
-          .flatTraverse { case (space, index) =>
-            createGlyph[F](paraStyle, None, space, x, elems.size + index).map(_.toList)
+          .flatTraverse { case (space, i) =>
+            createGlyph[F](paraStyle, None, space, x, y, index + elems.size + i).map(_.toList)
           }
           .map((elems, _))
       }
