@@ -1,5 +1,6 @@
 package devkat.pegasus
 
+import cats.implicits._
 import devkat.pegasus.Actions.{Delete, _}
 import devkat.pegasus.examples.Examples
 import devkat.pegasus.fonts.Fonts
@@ -34,19 +35,56 @@ object AppCircuit extends Circuit[RootModel] with ReactConnector[RootModel] {
 
   private val flowHandler: ActionHandler[RootModel, EditorModel] =
     new ActionHandler(zoomTo(_.editor)) {
+
+      private def startEnd(selection: Selection) = {
+        val start = Math.min(selection.anchor, selection.focus)
+        val end = Math.max(selection.anchor, selection.focus)
+        (start, end)
+      }
+
       override def handle = {
 
         case ReplaceFlow(flow) =>
           updated(value.copy(flow = flow, selection = Some(Selection(flow.length, flow.length))))
 
         case Insert(c) =>
-          updated(value.copy(flow = value.flow :+ Character(c, CharacterStyle.empty)))
+          value
+            .selection
+            .fold(noChange) { selection =>
+              updated {
+                val (start, end) = startEnd(selection)
+                value.copy(
+                  flow = value.flow.take(start) ::: List(Character(c, CharacterStyle.empty)) ::: value.flow.drop(end),
+                  selection = Some(Selection(start + 1, start + 1))
+                )
+              }
+            }
 
-        case Delete(start, end) =>
-          updated(value.copy(
-            flow = value.flow.take(start) ::: value.flow.drop(end),
-            selection = Some(Selection(start, start))
-          ))
+        case Backspace =>
+          value
+            .selection
+            .fold(noChange) { selection =>
+              val (start, end) = startEnd(selection)
+              if (start === end) {
+                if (start > 0) {
+                  updated(
+                    value.copy(
+                      flow = value.flow.take(start - 1) ::: value.flow.drop(end),
+                      selection = Some(Selection(start - 1, start - 1))
+                    )
+                  )
+                } else {
+                  noChange
+                }
+              } else {
+                updated(
+                  value.copy(
+                    flow = value.flow.take(start) ::: value.flow.drop(end),
+                    selection = Some(Selection(start, start))
+                  )
+                )
+              }
+            }
 
         case SetCaret(index) =>
           updated(value.copy(selection = Some(Selection(index, index))))

@@ -25,9 +25,7 @@ object Editor {
       //println(e.key.toString)
       e.keyCode match {
         case 8 =>
-          selection
-            .filter(_.anchor > 0)
-            .fold(Callback(()))(s => dispatch(Delete(s.anchor - 1, s.anchor)))
+          dispatch(Backspace)
         case _ =>
           e.key.toList match {
             case c :: _ => dispatch(Insert(c))
@@ -58,6 +56,7 @@ object Editor {
               div(
                 input(
                   `type` := "text",
+                  id := "pegasus-input",
                   onKeyDown ==> handleKeyDown(p.proxy.dispatchCB, model.selection)
                 )
               ),

@@ -14,8 +14,9 @@ import japgolly.scalajs.react.vdom.all.svg.{`class` => _, fontFamily => _, fontS
 import japgolly.scalajs.react.vdom.all.{color => _, height => _, width => _, _}
 import japgolly.scalajs.react.vdom.{TagOf, VdomElement}
 import japgolly.scalajs.react.{BackendScope, Callback, ReactMouseEvent, ScalaComponent}
-import org.scalajs.dom.Element
+import org.scalajs.dom.raw.HTMLInputElement
 import org.scalajs.dom.svg.TSpan
+import org.scalajs.dom.{Element, Node, document}
 
 object FlowView {
 
@@ -49,9 +50,21 @@ object FlowView {
                    (e: ReactMouseEvent): Callback =
       e.currentTarget match {
         case target: Element =>
-          val r = target.getBoundingClientRect()
-          val (x, y) = (e.clientX - r.left, e.clientY - r.top)
-          getIndex(layout, x, y).fold(Callback(()))(i => dispatch(SetCaret(i)))
+          e.preventDefault()
+          e.stopPropagation()
+          Option(document.getElementById("pegasus-input")).foreach {
+            case e: HTMLInputElement =>
+              println(e.toString)
+              e.focus()
+            case _ => ()
+          }
+          if (e.button === 0) {
+            val r = target.getBoundingClientRect()
+            val (x, y) = (e.clientX - r.left, e.clientY - r.top)
+            getIndex(layout, x, y).fold(Callback(()))(i => dispatch(SetCaret(i)))
+          } else {
+            Callback(())
+          }
         case _ =>
           Callback(())
       }
@@ -59,13 +72,22 @@ object FlowView {
     def handleMouseMove(layout: List[Line], dispatch: Action => Callback)
                        (e: ReactMouseEvent): Callback =
       e.currentTarget match {
-        case target: Element if e.button === 0 =>
-          val r = target.getBoundingClientRect()
-          val (x, y) = (e.clientX - r.left, e.clientY - r.top)
-          getIndex(layout, x, y).fold(Callback(()))(i => dispatch(SetCaret(i)))
+        case target: Element =>
+          if (e.button === 0) {
+            val r = target.getBoundingClientRect()
+            val (x, y) = (e.clientX - r.left, e.clientY - r.top)
+            getIndex(layout, x, y).fold(Callback(()))(i => dispatch(SetCaret(i)))
+          } else {
+            Callback(())
+          }
         case _ =>
           Callback(())
       }
+
+    @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
+    def closest[A](n: Node)(f: PartialFunction[Node, A]): Option[A] =
+      if (f.isDefinedAt(n)) Some(f(n))
+      else Option(n.parentNode).flatMap(closest(_)(f))
 
     def render(p: Props, s: State): VdomElement = {
       val flow = p.proxy.value.flow

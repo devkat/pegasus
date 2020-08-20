@@ -12,7 +12,9 @@ object Actions {
 
   final case class Insert(c: Char) extends Action
 
-  final case class Delete(from: Int, to: Int) extends Action
+  case object Delete extends Action
+
+  case object Backspace extends Action
 
   final case class SetCaret(index: Int) extends Action
 
