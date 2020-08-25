@@ -8,7 +8,7 @@ import diode.Action
 import diode.react.ModelProxy
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.all._
-import japgolly.scalajs.react.{BackendScope, Callback, ReactKeyboardEventFromInput, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactFormEventFromInput, ReactKeyboardEventFromInput, ScalaComponent}
 
 object Editor {
 
@@ -18,21 +18,24 @@ object Editor {
 
   class Backend($: BackendScope[Props, State]) {
 
-    def handleKeyDown(dispatch: Action => Callback,
-                      selection: Option[Selection])
-                     (e: ReactKeyboardEventFromInput): Callback = {
-      //println(e.keyCode.toString)
-      //println(e.key.toString)
+    def handleKeyDown(dispatch: Action => Callback)
+                     (e: ReactKeyboardEventFromInput): Callback =
       e.keyCode match {
-        case 8 =>
-          dispatch(Backspace)
+        case 8 => dispatch(Backspace)
+        case 37 => dispatch(MoveCaret(Direction.Left))
+        case 38 => dispatch(MoveCaret(Direction.Up))
+        case 39 => dispatch(MoveCaret(Direction.Right))
+        case 40 => dispatch(MoveCaret(Direction.Down))
         case _ =>
-          e.key.toList match {
-            case c :: _ => dispatch(Insert(c))
-            case Nil => Callback(())
-          }
+          println(e.keyCode.toString)
+          Callback(())
       }
 
+    def handleInput(dispatch: Action => Callback)
+                   (e: ReactFormEventFromInput): Callback = {
+      val value = e.target.value
+      e.target.value = ""
+      dispatch(Insert(value))
     }
 
     def render(p: Props, s: State): VdomElement = {
@@ -45,22 +48,17 @@ object Editor {
             model.hyphenationSpec.toOption
           )
           .mapN { case (fonts, hyphenationSpec) =>
-            val layoutEnv =
-              LayoutEnv(
-                layoutSettings,
-                fonts,
-                hyphenationSpec
-              )
             div(
               `class` := "flex-shrink-0",
               div(
                 input(
                   `type` := "text",
                   id := "pegasus-input",
-                  onKeyDown ==> handleKeyDown(p.proxy.dispatchCB, model.selection)
+                  onKeyDown ==> handleKeyDown(p.proxy.dispatchCB),
+                  onInput ==> handleInput(p.proxy.dispatchCB)
                 )
               ),
-              p.proxy.connect(identity).apply(p => FlowView(p, layoutEnv)),
+              p.proxy.connect(identity).apply(p => FlowView(p)),
               div(
                 fonts.fonts
                   .sortBy(f => f.family.value -> f.style.value)
@@ -76,12 +74,6 @@ object Editor {
 
 
   }
-
-  private lazy val layoutSettings: LayoutSettings =
-    LayoutSettings(
-      showHiddenCharacters = true,
-      hyphenate = true
-    )
 
   private lazy val component =
     ScalaComponent

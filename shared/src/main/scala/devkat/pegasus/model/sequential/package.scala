@@ -1,5 +1,6 @@
 package devkat.pegasus.model
 
+import cats.Eq
 import devkat.pegasus.model.nested.{Character => NestedCharacter, Element => NestedElement, Flow => NestedFlow}
 
 package object sequential {
@@ -17,7 +18,14 @@ package object sequential {
 
   }
 
-  sealed trait Element
+  sealed trait Element {
+
+    lazy val isParagraph: Boolean = this match {
+      case _: Paragraph => true
+      case _ => false
+    }
+
+  }
 
   sealed abstract class InlineElement(val style: CharacterStyle) extends Element
 
@@ -32,6 +40,8 @@ package object sequential {
     def fromFlowElement(style: CharacterStyle): NestedElement => Element = {
       case NestedCharacter(c) => Character(c, style)
     }
+
+    implicit lazy val eq: Eq[Element] = Eq.fromUniversalEquals
 
   }
 

@@ -1,6 +1,5 @@
 package devkat.pegasus.view
 
-import cats.Eval
 import cats.implicits._
 import devkat.pegasus.Actions.SetCaret
 import devkat.pegasus.layout._
@@ -23,28 +22,11 @@ object FlowView {
   private val w = 600
   private val hiddenCharactersColor = "#999999"
 
-  final case class Props(proxy: ModelProxy[EditorModel],
-                         env: LayoutEnv)
+  final case class Props(proxy: ModelProxy[EditorModel])
 
   type State = Unit
 
   class Backend($: BackendScope[Props, State]) {
-
-    private def getIndex(layout: List[Line], x: Double, y: Double): Option[Int] = {
-
-      def halfX(e: LineElement) = e.box.x + e.box.w / 2
-
-      for {
-        line <- layout.find(line => line.box.y <= y && y <= line.box.y + line.box.h)
-        (first, last) <- (line.elements.headOption, line.elements.lastOption).tupled
-        result <-
-          if (x <= halfX(first)) Some(first)
-          else if (halfX(last) < x) Some(last)
-          else line.elements.sliding(2, 1).collectFirst {
-            case a :: b :: Nil if halfX(a) <= x && x < halfX(b) => b
-          }
-      } yield result.index
-    }
 
     def handleClick(layout: List[Line], dispatch: Action => Callback)
                    (e: ReactMouseEvent): Callback =
@@ -61,7 +43,9 @@ object FlowView {
           if (e.button === 0) {
             val r = target.getBoundingClientRect()
             val (x, y) = (e.clientX - r.left, e.clientY - r.top)
-            getIndex(layout, x, y).fold(Callback(()))(i => dispatch(SetCaret(i)))
+            SelectionHelper
+              .getIndex(layout, x, y)
+              .fold(Callback(()))(i => dispatch(SetCaret(i)))
           } else {
             Callback(())
           }
@@ -76,7 +60,9 @@ object FlowView {
           if (e.button === 0) {
             val r = target.getBoundingClientRect()
             val (x, y) = (e.clientX - r.left, e.clientY - r.top)
-            getIndex(layout, x, y).fold(Callback(()))(i => dispatch(SetCaret(i)))
+            SelectionHelper
+              .getIndex(layout, x, y)
+              .fold(Callback(()))(i => dispatch(SetCaret(i)))
           } else {
             Callback(())
           }
@@ -91,18 +77,17 @@ object FlowView {
 
     def render(p: Props, s: State): VdomElement = {
       val flow = p.proxy.value.flow
+      val layout = p.proxy.value.layout
       val selection = p.proxy.value.selection
-
-      val (log, _, lines) = Layout[Eval](flow, w).run(p.env, ()).value
+      val selectionView = p.proxy.value.selectionView
 
       svg.svg(
         `class` := "pegasus",
 
-        onClick ==> handleClick(lines, p.proxy.dispatchCB),
+        onClick ==> handleClick(layout, p.proxy.dispatchCB),
         //onMouseMove ==> handleMouseMove(lines, p.proxy.dispatchCB),
 
-        selection
-          .flatMap(SelectionLayout(_, lines))
+        selectionView
           .toTagMod {
             case Caret(box) =>
               rect(
@@ -125,7 +110,7 @@ object FlowView {
               )
           },
 
-        lines.toTagMod { line =>
+        layout.toTagMod { line =>
           val (tspans, elems, style) = line.elements.foldLeft((
             List.empty[TagOf[TSpan]],
             List.empty[Char],
@@ -178,8 +163,7 @@ object FlowView {
       .renderBackend[Backend]
       .build
 
-  def apply(proxy: ModelProxy[EditorModel],
-            env: LayoutEnv): Unmounted[Props, State, Backend] =
-    component(Props(proxy, env))
+  def apply(proxy: ModelProxy[EditorModel]): Unmounted[Props, State, Backend] =
+    component(Props(proxy))
 
 }

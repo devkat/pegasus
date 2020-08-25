@@ -8,13 +8,26 @@ import diode.data.{Pot, PotAction}
 
 object Actions {
 
+  sealed trait Direction
+
+  object Direction {
+    case object Up extends Direction
+    case object Down extends Direction
+    case object Left extends Direction
+    case object Right extends Direction
+  }
+
   final case class ReplaceFlow(flow: Flow) extends Action
 
-  final case class Insert(c: Char) extends Action
+  final case class Insert(s: String) extends Action
 
   case object Delete extends Action
 
   case object Backspace extends Action
+
+  final case class MoveCaret(direction: Direction) extends Action
+
+  final case class ExpandSelection(direction: Direction) extends Action
 
   final case class SetCaret(index: Int) extends Action
 

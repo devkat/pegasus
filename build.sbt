@@ -7,7 +7,8 @@ ThisBuild / version := "0.1.0"
 lazy val commonSettings = Seq(
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
   scalacOptions ++= Seq(
-    "-language:higherKinds"
+    "-language:higherKinds",
+    "-Ymacro-annotations"
   ),
   wartremoverErrors ++= Warts.allBut(Wart.Any, Wart.Nothing, Wart.ToString, Wart.NonUnitStatements)
 )
@@ -51,6 +52,8 @@ lazy val client = (project in file("client"))
       //"com.lihaoyi" %%% "scalatags" % "0.9.1",
       "com.github.japgolly.scalajs-react" %%% "extra" % "1.7.3",
       //"com.github.littlenag" %%% "scalajs-react-bootstrap" % "0.0.1-SNAPSHOT"
+      "com.github.julien-truffaut" %%% "monocle-core"  % "2.0.3",
+      "com.github.julien-truffaut" %%% "monocle-macro" % "2.0.3",
     )
 
   )
