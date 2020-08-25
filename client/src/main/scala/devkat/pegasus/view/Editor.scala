@@ -2,8 +2,7 @@ package devkat.pegasus.view
 
 import cats.implicits._
 import devkat.pegasus.Actions._
-import devkat.pegasus.layout.{LayoutEnv, LayoutSettings}
-import devkat.pegasus.model.editor.{EditorModel, Selection}
+import devkat.pegasus.model.editor.EditorModel
 import diode.Action
 import diode.react.ModelProxy
 import japgolly.scalajs.react.component.Scala.Unmounted

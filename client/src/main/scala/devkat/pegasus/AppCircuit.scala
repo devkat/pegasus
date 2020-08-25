@@ -12,13 +12,12 @@ import devkat.pegasus.model.editor.{EditorModel, RootModel, Selection}
 import devkat.pegasus.model.sequential.{Character, Flow}
 import devkat.pegasus.view.{SelectionHelper, SelectionLayout}
 import diode._
-import diode.data.{AsyncAction, Pot, PotAction}
 import diode.data.PotState._
+import diode.data.{Pot, PotAction}
 import diode.react.ReactConnector
 import io.circe.parser._
 import monocle.Lens
 import monocle.macros.GenLens
-import monocle.macros.syntax.lens._
 import org.scalajs.dom.ext.Ajax
 
 import scala.concurrent.ExecutionContext.Implicits.global
