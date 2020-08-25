@@ -50,6 +50,7 @@ object Editor {
             div(
               `class` := "flex-shrink-0",
               div(
+                `class` := "pegasus-input-container",
                 input(
                   `type` := "text",
                   id := "pegasus-input",

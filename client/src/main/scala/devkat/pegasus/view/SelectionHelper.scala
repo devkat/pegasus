@@ -24,7 +24,7 @@ object SelectionHelper {
   def getIndexAbove(layout: List[Line], index: Int): Option[Int] =
     getLineAndX(layout, index).flatMap { case (i, x) =>
       if (i === 0)
-        None
+        layout.get(i).flatMap(_.elements.headOption).map(_.index)
       else
         layout.get(i - 1).flatMap(line => getClosestIndex(line.elements, x))
     }
@@ -32,7 +32,7 @@ object SelectionHelper {
   def getIndexBelow(layout: List[Line], index: Int): Option[Int] =
     getLineAndX(layout, index).flatMap { case (i, x) =>
       if (i === layout.length - 1)
-        None
+        layout.get(i).flatMap(_.elements.lastOption).map(_.index)
       else
         layout.get(i + 1).flatMap(line => getClosestIndex(line.elements, x))
     }
