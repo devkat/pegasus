@@ -36,7 +36,6 @@ object FlowView {
           e.stopPropagation()
           Option(document.getElementById("pegasus-input")).foreach {
             case e: HTMLInputElement =>
-              println(e.toString)
               e.focus()
             case _ => ()
           }
@@ -91,7 +90,7 @@ object FlowView {
           .toTagMod {
             case Caret(box) =>
               rect(
-                className := "caret",
+                className := "pegasus-caret",
                 x := box.x.toString,
                 y := box.y.toString,
                 width := box.w.toString,

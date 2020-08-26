@@ -117,7 +117,7 @@ object AppCircuit extends Circuit[RootModel] with ReactConnector[RootModel] {
                     noChange
 
                 case Direction.Right =>
-                  if (end < value.flow.length - 1)
+                  if (end < value.flow.length)
                     updateSelection(Some(Selection(end + 1, end + 1)))
                   else
                     noChange

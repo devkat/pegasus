@@ -19,3 +19,13 @@ svg text{
 .pegasus-input-container {
   opacity: 0;
 }
+
+.pegasus-caret {
+  animation: caret 1.5s steps(1) infinite;
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
