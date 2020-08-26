@@ -77,7 +77,7 @@ object Layout {
       elemAcc.toNel.fold(
         lineAcc
       )(
-        lineAcc :+ Line(Box(x, y, maxWidth, 20), _, paraStyle)
+        lineAcc :+ Line(Box(0, y, maxWidth, 20), _, paraStyle)
       )
 
     flow match {

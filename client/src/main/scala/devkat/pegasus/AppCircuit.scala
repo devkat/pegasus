@@ -135,6 +135,35 @@ object AppCircuit extends Circuit[RootModel] with ReactConnector[RootModel] {
               }
             }
 
+          case ExpandSelection(direction) =>
+            value.selection.fold(noChange) { selection =>
+              direction match {
+
+                case Direction.Left =>
+                  if (selection.focus > 1)
+                    updateSelection(Some(Selection(selection.anchor, selection.focus - 1)))
+                  else
+                    noChange
+
+                case Direction.Right =>
+                  if (selection.focus < value.flow.length)
+                    updateSelection(Some(Selection(selection.anchor, selection.focus + 1)))
+                  else
+                    noChange
+
+                case Direction.Up =>
+                  SelectionHelper
+                    .getIndexAbove(value.layout, selection.focus)
+                    .fold(noChange)(index => updateSelection(Some(Selection(selection.anchor, index))))
+
+                case Direction.Down =>
+                  SelectionHelper
+                    .getIndexBelow(value.layout, selection.focus)
+                    .fold(noChange)(index => updateSelection(Some(Selection(selection.anchor, index))))
+
+              }
+            }
+
           case SetCaret(index) =>
             updateSelection(Some(Selection(index, index)))
 

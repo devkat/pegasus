@@ -18,17 +18,25 @@ object Editor {
   class Backend($: BackendScope[Props, State]) {
 
     def handleKeyDown(dispatch: Action => Callback)
-                     (e: ReactKeyboardEventFromInput): Callback =
+                     (e: ReactKeyboardEventFromInput): Callback = {
+
+      lazy val shift = e.getModifierState("Shift")
+
+      def handleSelection(d: Direction): Action =
+        if (shift) ExpandSelection(d) else MoveCaret(d)
+
+
       e.keyCode match {
         case 8 => dispatch(Backspace)
-        case 37 => dispatch(MoveCaret(Direction.Left))
-        case 38 => dispatch(MoveCaret(Direction.Up))
-        case 39 => dispatch(MoveCaret(Direction.Right))
-        case 40 => dispatch(MoveCaret(Direction.Down))
+        case 37 => dispatch(handleSelection(Direction.Left))
+        case 38 => dispatch(handleSelection(Direction.Up))
+        case 39 => dispatch(handleSelection(Direction.Right))
+        case 40 => dispatch(handleSelection(Direction.Down))
         case _ =>
           println(e.keyCode.toString)
           Callback(())
       }
+    }
 
     def handleInput(dispatch: Action => Callback)
                    (e: ReactFormEventFromInput): Callback = {

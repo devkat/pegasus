@@ -29,3 +29,7 @@ svg text{
     opacity: 0;
   }
 }
+
+.pegasus-selection {
+  fill: #DDDDDD;
+}

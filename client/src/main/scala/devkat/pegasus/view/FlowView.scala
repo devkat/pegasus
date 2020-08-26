@@ -90,7 +90,7 @@ object FlowView {
           .toTagMod {
             case Caret(box) =>
               rect(
-                className := "pegasus-caret",
+                `class` := "pegasus-caret",
                 x := box.x.toString,
                 y := box.y.toString,
                 width := box.w.toString,
@@ -100,11 +100,11 @@ object FlowView {
             case Lines(lines) =>
               lines.toTagMod(box =>
                 rect(
+                  `class` := "pegasus-selection",
                   x := box.x.toString,
                   y := box.y.toString,
                   width := box.w.toString,
-                  height := box.h.toString,
-                  color := "#EEEEEEE"
+                  height := box.h.toString
                 )
               )
           },

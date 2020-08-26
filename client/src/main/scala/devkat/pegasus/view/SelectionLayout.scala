@@ -56,11 +56,11 @@ object SelectionLayout {
             )
             .mapN { case (e1, e2) =>
               if (i1 === i2)
-                List(Box(e1.box.x, l1.box.y, e2.box.x + e2.box.w, l1.box.h))
+                List(Box(l1.box.x + e1.box.x, l1.box.y, e2.box.x - e1.box.x, l1.box.h))
               else
-                (Box(e1.box.x, l1.box.y, l1.box.x + l2.box.w - e1.box.x, l1.box.h) ::
-                  layout.slice(i1, i2 - 1).map(_.box)) :+
-                  Box(e1.box.x, l1.box.y, l1.box.x + l2.box.w - e1.box.x, l1.box.h)
+                (Box(l1.box.x + e1.box.x, l1.box.y, l1.box.w - e1.box.x, l1.box.h) ::
+                  layout.slice(i1 + 1, i2).map(_.box)) :+
+                  Box(0, l2.box.y, e2.box.x, l2.box.h)
             }
         }
         .map(Lines.apply)
