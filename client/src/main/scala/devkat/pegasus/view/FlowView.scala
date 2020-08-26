@@ -1,7 +1,7 @@
 package devkat.pegasus.view
 
 import cats.implicits._
-import devkat.pegasus.Actions.SetCaret
+import devkat.pegasus.Actions.{MoveFocus, SetCaret}
 import devkat.pegasus.layout._
 import devkat.pegasus.model.CharacterStyle
 import devkat.pegasus.model.editor.EditorModel
@@ -28,8 +28,8 @@ object FlowView {
 
   class Backend($: BackendScope[Props, State]) {
 
-    def handleClick(layout: List[Line], dispatch: Action => Callback)
-                   (e: ReactMouseEvent): Callback =
+    def handleMouseDown(layout: List[Line], dispatch: Action => Callback)
+                       (e: ReactMouseEvent): Callback =
       e.currentTarget match {
         case target: Element =>
           e.preventDefault()
@@ -56,12 +56,12 @@ object FlowView {
                        (e: ReactMouseEvent): Callback =
       e.currentTarget match {
         case target: Element =>
-          if (e.button === 0) {
+          if (e.buttons === 1) {
             val r = target.getBoundingClientRect()
             val (x, y) = (e.clientX - r.left, e.clientY - r.top)
             SelectionHelper
               .getIndex(layout, x, y)
-              .fold(Callback(()))(i => dispatch(SetCaret(i)))
+              .fold(Callback(()))(i => dispatch(MoveFocus(i)))
           } else {
             Callback(())
           }
@@ -75,16 +75,14 @@ object FlowView {
       else Option(n.parentNode).flatMap(closest(_)(f))
 
     def render(p: Props, s: State): VdomElement = {
-      val flow = p.proxy.value.flow
       val layout = p.proxy.value.layout
-      val selection = p.proxy.value.selection
       val selectionView = p.proxy.value.selectionView
 
       svg.svg(
         `class` := "pegasus",
 
-        onClick ==> handleClick(layout, p.proxy.dispatchCB),
-        //onMouseMove ==> handleMouseMove(lines, p.proxy.dispatchCB),
+        onMouseDown ==> handleMouseDown(layout, p.proxy.dispatchCB),
+        onMouseMove ==> handleMouseMove(layout, p.proxy.dispatchCB),
 
         selectionView
           .toTagMod {

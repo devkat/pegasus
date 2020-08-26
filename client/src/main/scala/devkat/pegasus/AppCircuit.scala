@@ -167,6 +167,11 @@ object AppCircuit extends Circuit[RootModel] with ReactConnector[RootModel] {
           case SetCaret(index) =>
             updateSelection(Some(Selection(index, index)))
 
+          case MoveFocus(index) =>
+            value.selection.fold(noChange) { selection =>
+              updateSelection(Some(Selection(selection.anchor, index)))
+            }
+
         }
       }
     }
