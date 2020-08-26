@@ -1,7 +1,7 @@
 package devkat.pegasus.layout
 
 import cats.data.ReaderWriterStateT._
-import cats.data.{EitherT, ReaderWriterStateT}
+import cats.data.{EitherT, NonEmptyList, ReaderWriterStateT}
 import cats.implicits._
 import cats.{Applicative, Monad}
 import devkat.pegasus.model.ParagraphStyle
@@ -72,15 +72,23 @@ object Layout {
     y: Double,
     maxWidth: Double,
     paraStyle: ParagraphStyle): LayoutRW[F, List[Line]] = {
+
+    lazy val newAcc =
+      elemAcc.toNel.fold(
+        lineAcc
+      )(
+        lineAcc :+ Line(Box(x, y, maxWidth, 20), _, paraStyle)
+      )
+
     flow match {
-      case Nil => pure(if (elemAcc.isEmpty) lineAcc else lineAcc :+ mkLine(x, y, elemAcc, paraStyle))
+      case Nil => pure(newAcc)
       case nonEmpty =>
         for {
           chunkOption <- layoutNextChunk[F](nonEmpty, index, x, y, maxWidth, paraStyle)
           result <- chunkOption match {
             case None =>
               layoutLines2[F](
-                lineAcc :+ mkLine(x, y, elemAcc, paraStyle),
+                newAcc,
                 List.empty[LineElement],
                 flow,
                 index,
@@ -104,9 +112,6 @@ object Layout {
         } yield result
     }
   }
-
-  private def mkLine(x: Double, y: Double, elems: List[LineElement], style: ParagraphStyle): Line =
-    Line(Box(x, y, elems.lastOption.map(e => e.box.x + e.box.w).getOrElse(0), 20), elems, style)
 
   private def createGlyph[
     F[_] : Monad

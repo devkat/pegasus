@@ -23,18 +23,16 @@ object SelectionLayout {
       layout
         .map(_.elements)
         .collectFirst {
-          case line @ (_ :+ last) if index <= last.index => line
+          case line if index <= line.last.index => line
         }
         .flatMap(_.find(_.index === index))
 
     def findLine(index: Int): Option[(Line, Int)] =
       layout
         .zipWithIndex
-        .sliding(2, 1)
         .collectFirst {
-          case (line@Line(_, h1 :: t1, _), i1) :: (Line(_, h2 :: t2, _), i2) :: Nil
-            if (h1.index <= index && index <= h2.index) => (line, i1)
-          case line :: Nil => line
+          case (line@Line(_, elems, _), i1)
+            if (elems.head.index <= index && index <= elems.last.index) => (line, i1)
         }
 
     if (selection.anchor === selection.focus)

@@ -127,7 +127,7 @@ object FlowView {
             else tspans :+ mkTspan(style, elems)
 
           text(
-            x := line.elements.map(_.box.x.svgString).mkString(" "),
+            x := line.elements.map(_.box.x.svgString).mkString_(" "),
             y := line.box.y + line.box.h,
             line.style.fontFamily.whenDefined(fontFamily := _),
             line.style.fontStyle.whenDefined(fontStyle := _),
