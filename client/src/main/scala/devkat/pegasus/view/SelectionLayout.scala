@@ -22,10 +22,8 @@ object SelectionLayout {
     def findElement(index: Int): Option[LineElement] =
       layout
         .map(_.elements)
-        .sliding(2, 1)
         .collectFirst {
-          case (h1 :: t1) :: (h2 :: _) :: Nil if (h1.index <= index && index <= h2.index) => h1 :: t1
-          case line :: Nil => line
+          case line @ (_ :+ last) if index <= last.index => line
         }
         .flatMap(_.find(_.index === index))
 
