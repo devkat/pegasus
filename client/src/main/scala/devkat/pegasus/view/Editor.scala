@@ -48,34 +48,24 @@ object Editor {
     def render(p: Props, s: State): VdomElement = {
       val model = p.proxy.value
       div(
-        `class` := "container app-container h-100",
-        Tuple2
-          .apply(
-            model.fonts.toOption,
-            model.hyphenationSpec.toOption
-          )
-          .mapN { case (fonts, hyphenationSpec) =>
+        `class` := "container-fluid app-container h-100",
+        div(
+          `class` := "row",
+          Sidebar(p.proxy),
+          div(
+            `class` := "col flex-shrink-0",
             div(
-              `class` := "flex-shrink-0",
-              div(
-                `class` := "pegasus-input-container",
-                input(
-                  `type` := "text",
-                  id := "pegasus-input",
-                  onKeyDown ==> handleKeyDown(p.proxy.dispatchCB),
-                  onInput ==> handleInput(p.proxy.dispatchCB)
-                )
-              ),
-              p.proxy.connect(identity).apply(p => FlowView(p)),
-              div(
-                fonts.fonts
-                  .sortBy(f => f.family.value -> f.style.value)
-                  .toTagMod(f =>
-                    div(f.family.value + " / " + f.style.value + " / " + f.weight.value.toString)
-                  )
+              `class` := "pegasus-input-container",
+              input(
+                `type` := "text",
+                id := "pegasus-input",
+                onKeyDown ==> handleKeyDown(p.proxy.dispatchCB),
+                onInput ==> handleInput(p.proxy.dispatchCB)
               )
-            )
-          },
+            ),
+            p.proxy.connect(identity).apply(p => FlowView(p))
+          )
+        ),
         StatusBar(p.proxy)
       )
     }
