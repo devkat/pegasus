@@ -5,8 +5,8 @@ import cats.data.ReaderWriterStateT.ask
 import cats.implicits._
 import devkat.pegasus.fonts.FontKey
 import devkat.pegasus.layout.Layout.LayoutRW
-import devkat.pegasus.model.ParagraphStyle
 import devkat.pegasus.model.sequential.Character
+import devkat.pegasus.model.style.ParagraphStyle
 
 object Glyphs {
 

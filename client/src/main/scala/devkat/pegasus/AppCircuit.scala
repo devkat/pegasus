@@ -7,9 +7,9 @@ import devkat.pegasus.examples.Examples
 import devkat.pegasus.fonts.Fonts
 import devkat.pegasus.hyphenation.HyphenationSpec
 import devkat.pegasus.layout.{Layout, LayoutEnv, LayoutSettings, Line}
-import devkat.pegasus.model.CharacterStyle
 import devkat.pegasus.model.editor.{EditorModel, RootModel, Selection}
 import devkat.pegasus.model.sequential.{Character, Flow}
+import devkat.pegasus.model.style.CharacterStyle
 import devkat.pegasus.view.{SelectionHelper, SelectionLayout}
 import diode._
 import diode.data.PotState._
@@ -36,6 +36,8 @@ object AppCircuit extends Circuit[RootModel] with ReactConnector[RootModel] {
     RootModel(
       EditorModel(
         flow = flow,
+        characterFormats = Nil,
+        paragraphFormats = Nil,
         layout = Nil,
         selection = None,
         selectionView = None,

@@ -1,8 +1,8 @@
 package devkat.pegasus
 
 import cats.data.NonEmptyList
-import devkat.pegasus.model.ParagraphStyle
 import devkat.pegasus.model.sequential.{Character, Flow}
+import devkat.pegasus.model.style.ParagraphStyle
 
 package object layout {
 

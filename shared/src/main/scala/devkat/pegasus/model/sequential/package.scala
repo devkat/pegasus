@@ -1,7 +1,9 @@
 package devkat.pegasus.model
 
 import cats.Eq
+import devkat.pegasus.model.format.{CharacterFormat, ParagraphFormat}
 import devkat.pegasus.model.nested.{Character => NestedCharacter, Element => NestedElement, Flow => NestedFlow}
+import devkat.pegasus.model.style.{CharacterStyle, ParagraphStyle}
 
 package object sequential {
 

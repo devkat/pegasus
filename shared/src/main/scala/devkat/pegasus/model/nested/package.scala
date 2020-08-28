@@ -1,5 +1,7 @@
 package devkat.pegasus.model
 
+import devkat.pegasus.model.style.{CharacterStyle, ParagraphStyle}
+
 package object nested {
 
   final case class Flow(paragraphs: List[Paragraph])

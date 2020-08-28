@@ -1,7 +1,7 @@
 package devkat.pegasus.examples
 
 import devkat.pegasus.model.nested.{Character, Flow, Paragraph, Span}
-import devkat.pegasus.model.{CharacterStyle, ParagraphStyle}
+import devkat.pegasus.model.style.{CharacterStyle, ParagraphStyle}
 
 object Examples {
 

@@ -51,7 +51,7 @@ lazy val client = (project in file("client"))
       "io.suzaku" %%% "diode-react" % "1.1.11",
       //"com.lihaoyi" %%% "scalatags" % "0.9.1",
       "com.github.japgolly.scalajs-react" %%% "extra" % "1.7.3",
-      //"com.github.littlenag" %%% "scalajs-react-bootstrap" % "0.0.1-SNAPSHOT"
+      "io.github.littlenag" %%% "scalajs-react-bootstrap" % "0.0.7-SNAPSHOT",
       "com.github.julien-truffaut" %%% "monocle-core"  % "2.0.3",
       "com.github.julien-truffaut" %%% "monocle-macro" % "2.0.3",
     )

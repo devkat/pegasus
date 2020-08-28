@@ -4,8 +4,8 @@ import cats.data.ReaderWriterStateT._
 import cats.data.{EitherT, NonEmptyList, ReaderWriterStateT}
 import cats.implicits._
 import cats.{Applicative, Monad}
-import devkat.pegasus.model.ParagraphStyle
 import devkat.pegasus.model.sequential._
+import devkat.pegasus.model.style.ParagraphStyle
 
 object Layout {
 

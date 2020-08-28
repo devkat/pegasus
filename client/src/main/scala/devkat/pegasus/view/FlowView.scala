@@ -3,8 +3,8 @@ package devkat.pegasus.view
 import cats.implicits._
 import devkat.pegasus.Actions.{MoveFocus, SetCaret}
 import devkat.pegasus.layout._
-import devkat.pegasus.model.CharacterStyle
 import devkat.pegasus.model.editor.EditorModel
+import devkat.pegasus.model.style.CharacterStyle
 import devkat.pegasus.view.SelectionView._
 import diode.Action
 import diode.react.ModelProxy
