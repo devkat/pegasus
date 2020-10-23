@@ -1,6 +1,6 @@
 name := "Pegasus Authoring System"
 
-ThisBuild / scalaVersion := "2.13.1"
+ThisBuild / scalaVersion := "2.13.3"
 ThisBuild / organization := "devkat"
 ThisBuild / version := "0.1.0"
 
@@ -46,19 +46,43 @@ lazy val client = (project in file("client"))
     scalaJSUseMainModuleInitializer := true,
     //testFrameworks += new TestFramework("utest.runner.Framework"),
     //emitSourceMaps := true,
+    //scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
+    stFlavour := Flavour.Japgolly,
+    stIgnore := List("typeface-roboto"),
+    webpackConfigFile := Some(baseDirectory.value / "custom.webpack.config.js"),
 
     libraryDependencies ++= Seq(
-      "io.suzaku" %%% "diode-react" % "1.1.11",
-      //"com.lihaoyi" %%% "scalatags" % "0.9.1",
-      "com.github.japgolly.scalajs-react" %%% "extra" % "1.7.3",
-      "io.github.littlenag" %%% "scalajs-react-bootstrap" % "0.0.7-SNAPSHOT",
+      "io.suzaku" %%% "diode-react" % "1.1.13",
+      "com.github.japgolly.scalajs-react" %%% "extra" % "1.7.5",
+      "com.payalabs" %%% "scalajs-react-bridge" % "0.8.3-SNAPSHOT",
       "com.github.julien-truffaut" %%% "monocle-core"  % "2.0.3",
-      "com.github.julien-truffaut" %%% "monocle-macro" % "2.0.3",
+      "com.github.julien-truffaut" %%% "monocle-macro" % "2.0.3"
+    ),
+
+    npmDependencies in Compile ++= Seq(
+      "react" -> "^16.13.1",
+      "@types/react" -> "^16.13.1",
+      "react-dom" -> "^16.13.1",
+      "@types/react-dom" -> "^16.13.1",
+      "@material-ui/core" -> "3.9.4",
+      //"@material-ui/core" -> "4.11.0",
+      "@material-ui/styles" -> "3.0.0-alpha.10",
+      "@material-ui/icons" -> "3.0.2",
+      "typeface-roboto" -> "0.0.75",
+      //"@fortawesome/fontawesome-free" -> "5.7.2"
+    ),
+
+    npmDevDependencies in Compile ++= Seq(
+      "webpack-merge" -> "^5.1.4",
+      "style-loader" -> "^1.2.1",
+      "css-loader" -> "^4.3.0",
+      "file-loader" -> "^6.1.0",
+      "url-loader" -> "^4.1.0"
     )
 
   )
   .dependsOn(shared.js)
-  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSBundlerPlugin, ScalablyTypedConverterPlugin)
 
 lazy val server = (project in file("server"))
   .settings(commonSettings)

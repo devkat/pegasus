@@ -6,16 +6,47 @@ import devkat.pegasus.model.editor.EditorModel
 import diode.Action
 import diode.react.ModelProxy
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.ScalaFn
 import japgolly.scalajs.react.vdom.all._
-import japgolly.scalajs.react.{BackendScope, Callback, ReactFormEventFromInput, ReactKeyboardEventFromInput, ScalaComponent}
+import japgolly.scalajs.react.{BackendScope, Callback, ReactFormEventFromInput, ReactKeyboardEventFromInput, ScalaComponent, ScalaFnComponent}
+import org.scalablytyped.runtime.StringDictionary
+import typings.materialUiCore.components.Toolbar
+import typings.materialUiCore.components._
+import typings.materialUiCore.gridGridMod.GridSize._
+import typings.materialUiCore.materialUiCoreStrings.fixed
+import typings.materialUiCore.typographyTypographyMod.Style
+import typings.materialUiCore.zIndexMod.ZIndex
+import typings.materialUiStyles.mod.makeStyles
+import typings.materialUiStyles.withStylesMod.{CSSProperties, WithStylesOptions}
+
+import scala.scalajs.js
 
 object Editor {
 
+  class Theme(val zIndex: ZIndex) extends js.Object
+
+  val styles: js.Function1[Theme, StringDictionary[CSSProperties]] = theme =>
+    StringDictionary(
+      "root" -> CSSProperties()
+        .setDisplay("flex"),
+      "appBar" -> CSSProperties()
+        //.setZIndex(theme.zIndex.drawer + 1),
+        .setZIndex(1201),
+      "drawer" -> CSSProperties()
+        .setWidth(240)
+        .setFlexShrink(0),
+      "drawerPaper" -> CSSProperties()
+        .setWidth(240),
+      "drawerContainer" -> CSSProperties()
+        .setOverflow("auto"),
+      "content" -> CSSProperties()
+        .setFlexGrow(1)
+      //.setPadding(theme.spacing(3)),
+    )
+
   final case class Props(proxy: ModelProxy[EditorModel])
 
-  type State = Unit
-
-  class Backend($: BackendScope[Props, State]) {
+  object Backend {
 
     def handleKeyDown(dispatch: Action => Callback)
                      (e: ReactKeyboardEventFromInput): Callback = {
@@ -45,34 +76,47 @@ object Editor {
       dispatch(Insert(value))
     }
 
-    def render(p: Props, s: State): VdomElement = {
-      val model = p.proxy.value
+    def render(p: Props): VdomElement = {
+
+      // https://gitter.im/ScalablyTyped/community?at=5ec6828b89941d051a13b991
+      val useStyles = makeStyles(styles, WithStylesOptions())
+      lazy val classes = useStyles()
+
       div(
-        `class` := "container-fluid app-container h-100",
-        div(
-          `class` := "row",
-          Sidebar(p.proxy),
-          div(
-            `class` := "col flex-shrink-0",
-            div(
-              `class` := "pegasus-input-container",
-              input(
-                `type` := "text",
-                id := "pegasus-input",
-                onKeyDown ==> handleKeyDown(p.proxy.dispatchCB),
-                onInput ==> handleInput(p.proxy.dispatchCB)
-              )
-            ),
-            p.proxy.connect(identity).apply(p => FlowView(p))
+        CssBaseline(),
+        AppBar(
+          Toolbar(
+            Typography("Pegasus").variant(Style.h6).noWrap(true)
           )
-        ),
+        )
+          .position(fixed)
+          .className(classes("appBar")),
+        Sidebar(p.proxy),
+        Grid(
+          div(
+            `class` := "pegasus-input-container",
+            input(
+              `type` := "text",
+              id := "pegasus-input",
+              onKeyDown ==> handleKeyDown(p.proxy.dispatchCB),
+              onInput ==> handleInput(p.proxy.dispatchCB)
+            )
+          ),
+          p.proxy.connect(identity).apply(p => FlowView(p))
+        ).xs(`9`).item(true),
         StatusBar(p.proxy)
       )
     }
 
-
   }
 
+  private lazy val component =
+    ScalaFnComponent[Props](Backend.render)
+
+  def apply(proxy: ModelProxy[EditorModel]): ScalaFn.Unmounted[Props] =
+    component(Props(proxy))
+
+  /*
   private lazy val component =
     ScalaComponent
       .builder[Props]("Editor")
@@ -81,4 +125,6 @@ object Editor {
 
   def apply(proxy: ModelProxy[EditorModel]): Unmounted[Props, State, Backend] =
     component(Props(proxy))
+   */
+
 }

@@ -33,3 +33,7 @@ svg text{
 .pegasus-selection {
   fill: #DDDDDD;
 }
+
+.drawer {
+  width: 240px;
+}

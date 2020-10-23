@@ -6,8 +6,17 @@ import diode.data.Pot
 import japgolly.scalajs.react.extra.router.{BaseUrl, Router, RouterConfig, RouterConfigDsl, SetRouteVia}
 import org.scalajs.dom
 
+import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
+
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object App {
+
+  object imports {
+    @js.native
+    @JSImport("typeface-roboto", JSImport.Namespace)
+    object typefaceRoboto extends js.Object
+  }
 
   private val baseUrl: BaseUrl =
     BaseUrl(dom.window.location.href.takeWhile(_ != '#'))
@@ -31,6 +40,8 @@ object App {
     }
 
   def main(args: Array[String]): Unit = {
+
+    imports.typefaceRoboto
 
     //val rootModel = AppCircuit.zoom(identity)
     //AppCircuit.subscribe(rootModel)(_ => render())

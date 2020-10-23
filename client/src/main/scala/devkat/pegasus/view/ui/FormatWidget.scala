@@ -6,6 +6,7 @@ import japgolly.scalajs.react.{BackendScope, ScalaComponent}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.VdomElement
 import japgolly.scalajs.react.vdom.all._
+import typings.materialUiCore.components._
 
 object FormatWidget {
 
@@ -17,37 +18,14 @@ object FormatWidget {
 
     def render(p: Props, s: State): VdomElement = {
       val model = p.proxy.value
-
-      val dataToggle = VdomAttr("data-toggle")
-
-      val fontFamily: String = model.selection
-        .flatMap(selection => UiHelper.getCommonCharacterStyle(model.flow, selection, _.style.fontFamily))
-        .getOrElse("–")
-
-      div(
-        `class` := "form-group",
-        label(`for` := p.scope + "_fontFamily", "Font family"),
-        div(
-          `class` := "dropdown",
-          button(
-            `type` := "button",
-            `class` := "btn btn-secondary dropdown-toggle",
-            dataToggle := "dropdown",
-            fontFamily
-          ),
-          div(
-            `class` := "dropdown-menu",
-            model.fonts.toOption.toTagMod(
-              _
-                .fonts
-                .map(_.family.value)
-                .sorted
-                .distinct
-                .toTagMod(family => a(`class` := "dropdown-item", href := "#", family))
-            )
-          )
+      FormControl(
+        InputLabel("Paragraph Format"),
+        Select(
+          value := "Heading 1",
+          MenuItem("Heading 1"),
+          MenuItem("Heading 2")
         )
-      )
+      ).fullWidth(true)
     }
   }
 
